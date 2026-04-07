@@ -144,8 +144,8 @@ document.querySelector('#app').innerHTML = `
           <input type="text" value="AUTO_EXECUTE_PAYMENT" readonly />
         </div>
 
-        <div class="help-box">
-          <p class="helper-text">
+        <div class="help-box notice-box">
+          <p class="helper-text notice-text">
             Only the approved agent wallet can execute orders. Users can place orders, but execution is handled by the agent.
           </p>
         </div>
