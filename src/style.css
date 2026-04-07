@@ -363,3 +363,29 @@ h1 span {
     height: 62px;
   }
 }
+.help-box {
+  margin: 12px 0 4px;
+  display: grid;
+  gap: 8px;
+}
+
+.helper-text {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.helper-link {
+  display: inline-block;
+  text-decoration: none;
+  background: var(--accent2);
+  color: #fff;
+  padding: 12px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: none;
+}

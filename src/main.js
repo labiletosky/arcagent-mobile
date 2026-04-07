@@ -5,12 +5,13 @@ import { EthersAdapter } from '@reown/appkit-adapter-ethers'
 
 const PROJECT_ID = '3f606d90e27edfdd5d9d6b7f3a469448'
 
-const AGENT_ADDR = '0x880A0e6c1eD42E1B1C3ce70f51aE6d0314911c52'
-const TOKEN_ADDR = '0x7888Da753f5D964987931741C8ca2044F6c1c463'
+const AGENT_ADDR = '0x909e3E7b5F4257B1C5Add949B1678025a4b7343f'
+const TOKEN_ADDR = '0x3600000000000000000000000000000000000000'
 const ARC_CHAIN_ID = 5042002
 const ARC_CHAIN_ID_HEX = '0x4CEF52'
 const ARC_RPC_URL = 'https://rpc.testnet.arc.network'
 const ARC_EXPLORER_URL = 'https://testnet.arcscan.app'
+const FAUCET_URL = 'https://faucet.circle.com'
 
 const AGENT_ABI = [
   'function placeOrder(string memory item, uint256 amount) returns (uint256)',
@@ -112,9 +113,22 @@ document.querySelector('#app').innerHTML = `
           <input type="text" id="itemName" placeholder="e.g. Coffee, API Call..." />
         </div>
         <div class="field">
-          <label>Amount (ART tokens)</label>
+          <label>Amount (USDC)</label>
           <input type="number" id="orderAmount" placeholder="e.g. 10" />
         </div>
+
+        <div class="help-box">
+          <p class="helper-text">Arc Testnet uses USDC for gas and testing.</p>
+          <a
+            href="${FAUCET_URL}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="helper-link"
+          >
+            Get Test USDC
+          </a>
+        </div>
+
         <button class="action-btn" id="placeBtn">Place Order</button>
         <div class="status" id="placeStatus"></div>
       </div>
@@ -297,14 +311,14 @@ async function loadRecentOrders() {
 
     for (let i = count; i >= start; i--) {
       const o = await agent.getOrder(i)
-      const amt = parseFloat(ethers.formatUnits(o.amount, 18)).toFixed(2)
+      const amt = parseFloat(ethers.formatUnits(o.amount, 6)).toFixed(2)
 
       list.innerHTML += `
         <div class="order-item">
           <div class="order-id">#${Number(o.id)}</div>
           <div class="order-details">
             <div class="order-item-name">${o.item}</div>
-            <div class="order-meta">${amt} ART · ${o.buyer.slice(0, 6)}...${o.buyer.slice(-4)}</div>
+            <div class="order-meta">${amt} USDC · ${o.buyer.slice(0, 6)}...${o.buyer.slice(-4)}</div>
           </div>
           <div class="order-status ${o.executed ? 'executed' : 'pending'}">${o.executed ? 'Done' : 'Pending'}</div>
         </div>
@@ -332,13 +346,13 @@ async function placeOrder() {
 
   const placeBtn = document.getElementById('placeBtn')
   placeBtn.disabled = true
-  showStatus('placeStatus', 'Approving tokens...', 'loading')
+  showStatus('placeStatus', 'Approving USDC...', 'loading')
 
   try {
     const parsed = parseFloat(amt)
     if (isNaN(parsed) || parsed <= 0) throw new Error('Enter a valid amount.')
 
-    const amount = ethers.parseUnits(String(Math.floor(parsed)), 18)
+    const amount = ethers.parseUnits(String(parsed), 6)
 
     const token = new ethers.Contract(TOKEN_ADDR, TOKEN_ABI, signer)
     const approveTx = await token.approve(AGENT_ADDR, amount)
@@ -407,12 +421,12 @@ async function lookupOrder() {
     const readProvider = getReadProvider()
     const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, readProvider)
     const o = await agent.getOrder(Number(id))
-    const amt = parseFloat(ethers.formatUnits(o.amount, 18)).toFixed(4)
+    const amt = parseFloat(ethers.formatUnits(o.amount, 6)).toFixed(2)
     const date = new Date(Number(o.timestamp) * 1000).toLocaleString()
 
     showStatus(
       'lookupStatus',
-      `ID: #${Number(o.id)}\nItem: ${o.item}\nBuyer: ${o.buyer}\nAmount: ${amt} ART\nStatus: ${o.executed ? '✓ Executed' : '⏳ Pending'}\nTime: ${date}`,
+      `ID: #${Number(o.id)}\nItem: ${o.item}\nBuyer: ${o.buyer}\nAmount: ${amt} USDC\nStatus: ${o.executed ? '✓ Executed' : '⏳ Pending'}\nTime: ${date}`,
       'success'
     )
   } catch {
