@@ -1,17 +1,17 @@
 :root {
-  --bg: #f4f0e6;
-  --panel: #fbf8f1;
-  --panel-2: #f1ecdf;
-  --text: #2d2a26;
-  --muted: #7b7464;
-  --border: #d9cfb5;
-  --accent: #d4a62a;
-  --accent2: #415766;
-  --accent3: #5b6f57;
-  --danger: #b45d5d;
+  --bg: #f5f1e8;
+  --panel: #fcfaf4;
+  --input: #f2eee3;
+  --text: #2e2a24;
+  --muted: #8a846f;
+  --border: #d8cfbb;
+  --accent: #d3ad34;
+  --accent2: #536573;
+  --accent3: #5c7460;
   --success-bg: #eef5ea;
-  --error-bg: #f7ecec;
-  --shadow: 0 18px 40px rgba(59, 49, 29, 0.08);
+  --error-bg: #f8ecec;
+  --loading-bg: #f5f0df;
+  --shadow: 0 12px 28px rgba(64, 49, 21, 0.06);
 }
 
 * {
@@ -41,9 +41,9 @@ input {
 }
 
 .container {
-  max-width: 1120px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 36px 20px 60px;
+  padding: 34px 18px 60px;
 }
 
 header {
@@ -54,9 +54,9 @@ header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #8b8370;
+  gap: 22px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid #8f8774;
 }
 
 .brand-wrap {
@@ -66,16 +66,15 @@ header {
 }
 
 .brand-logo {
-  width: 84px;
-  height: 84px;
+  width: 82px;
+  height: 82px;
   object-fit: cover;
   border-radius: 18px;
-  background: #171717;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #1d1d1d;
 }
 
 .eyebrow {
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 5px;
   text-transform: uppercase;
   color: var(--muted);
@@ -84,8 +83,8 @@ header {
 
 h1 {
   margin: 0;
-  font-size: 64px;
-  line-height: 0.95;
+  font-size: 66px;
+  line-height: 0.92;
   letter-spacing: -1px;
   font-weight: 700;
 }
@@ -102,10 +101,9 @@ h1 span {
 }
 
 .wallet-panel {
-  min-width: 280px;
+  min-width: 270px;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   gap: 10px;
 }
 
@@ -115,7 +113,7 @@ h1 span {
 .helper-link {
   border: none;
   cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .connect-btn:hover,
@@ -127,13 +125,13 @@ h1 span {
 
 .connect-btn {
   width: 100%;
-  background: #465563;
+  background: #4e5e6b;
   color: #fff;
   padding: 15px 16px;
   font-size: 13px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .wallet-badge {
@@ -141,10 +139,9 @@ h1 span {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  background: #214132;
-  color: #d7f2df;
+  background: #204233;
+  color: #d8f0e1;
   padding: 10px 12px;
-  border: 1px solid rgba(33, 65, 50, 0.22);
   font-size: 12px;
   font-weight: 700;
 }
@@ -153,7 +150,7 @@ h1 span {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: #4dd07a;
+  background: #4fd07c;
   flex: 0 0 auto;
 }
 
@@ -166,8 +163,8 @@ h1 span {
 
 .mini-btn {
   background: transparent;
-  color: #d7f2df;
-  border: 1px solid rgba(215, 242, 223, 0.4);
+  color: #d8f0e1;
+  border: 1px solid rgba(216, 240, 225, 0.45);
   padding: 6px 10px;
   font-size: 11px;
   letter-spacing: 1px;
@@ -182,25 +179,25 @@ h1 span {
 }
 
 .stat-box {
-  background: #4a5663;
-  color: #ead68c;
+  background: #4f5e6c;
+  color: #e2c35a;
   padding: 22px 16px;
   text-align: center;
   box-shadow: var(--shadow);
 }
 
 .stat-num {
-  font-size: 44px;
+  font-size: 42px;
   line-height: 1;
   font-weight: 700;
   margin-bottom: 6px;
 }
 
 .stat-label {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.72);
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 3px;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .grid {
@@ -224,7 +221,7 @@ h1 span {
 }
 
 .card-title span {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 4px;
@@ -233,8 +230,8 @@ h1 span {
 
 .card-title::after {
   content: "";
-  height: 1px;
   flex: 1;
+  height: 1px;
   background: var(--border);
 }
 
@@ -253,27 +250,27 @@ h1 span {
 
 .field input {
   width: 100%;
-  padding: 14px 14px;
+  padding: 14px;
   border: 1px solid var(--border);
-  background: var(--panel-2);
+  background: var(--input);
   color: var(--text);
   font-size: 14px;
   outline: none;
 }
 
 .field input::placeholder {
-  color: #9a9587;
+  color: #9c9685;
 }
 
 .action-btn {
   width: 100%;
   padding: 14px 16px;
   color: #fff;
+  background: var(--accent);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  background: var(--accent);
 }
 
 .action-btn.secondary {
@@ -282,7 +279,7 @@ h1 span {
 
 .action-btn.neutral {
   background: #d9d3c6;
-  color: #38342e;
+  color: #3b3730;
 }
 
 .action-btn:disabled,
@@ -294,7 +291,7 @@ h1 span {
 
 .status {
   margin-top: 12px;
-  padding: 12px 12px;
+  padding: 12px;
   font-size: 12px;
   line-height: 1.55;
   white-space: pre-line;
@@ -305,22 +302,22 @@ h1 span {
 .status.success {
   display: block;
   background: var(--success-bg);
-  border-left-color: #7aa16a;
-  color: #3f5d36;
+  border-left-color: #7ca46d;
+  color: #426139;
 }
 
 .status.error {
   display: block;
   background: var(--error-bg);
-  border-left-color: var(--danger);
-  color: #8a4d4d;
+  border-left-color: #b75f5f;
+  color: #8c4d4d;
 }
 
 .status.loading {
   display: block;
-  background: #f3efdf;
+  background: var(--loading-bg);
   border-left-color: var(--accent);
-  color: #73684b;
+  color: #786c4d;
 }
 
 .orders-list {
@@ -332,7 +329,7 @@ h1 span {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background: var(--panel-2);
+  background: #f4efe2;
   border: 1px solid var(--border);
   padding: 12px;
 }
@@ -340,8 +337,8 @@ h1 span {
 .order-id {
   min-width: 48px;
   font-size: 28px;
-  line-height: 1;
   font-weight: 700;
+  line-height: 1;
   color: var(--accent);
 }
 
@@ -372,12 +369,12 @@ h1 span {
 
 .order-status.executed {
   background: #edf6eb;
-  color: #4d7a4d;
+  color: #507a50;
 }
 
 .order-status.pending {
-  background: #f7f0da;
-  color: #9a7a23;
+  background: #f8f1db;
+  color: #9c7d27;
 }
 
 .empty-state {
@@ -389,17 +386,16 @@ h1 span {
 }
 
 .help-box {
-  margin: 12px 0 10px;
+  margin: 10px 0 10px;
   display: grid;
   gap: 8px;
 }
 
 .helper-text {
   margin: 0;
-  font-size: 12px;
-  line-height: 1.6;
-  color: #5f5848;
-  font-weight: 600;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 
 .helper-link {
@@ -416,14 +412,16 @@ h1 span {
 }
 
 .notice-box {
-  background: #f5f1e7;
-  border: 1px solid #d9cfb5;
-  padding: 10px;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .notice-text {
-  color: #4b4538;
-  font-weight: 700;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 @media (max-width: 900px) {
@@ -448,10 +446,6 @@ h1 span {
 @media (max-width: 520px) {
   .container {
     padding: 22px 14px 36px;
-  }
-
-  .brand-wrap {
-    align-items: flex-start;
   }
 
   .brand-logo {
