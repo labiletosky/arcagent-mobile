@@ -56,7 +56,7 @@ const metadata = {
 
 const ethersAdapter = new EthersAdapter()
 
-const modal = createAppKit({
+createAppKit({
   adapters: [ethersAdapter],
   projectId: PROJECT_ID,
   metadata,
@@ -70,6 +70,13 @@ const modal = createAppKit({
 document.querySelector('#app').innerHTML = `
   <div class="container">
     <header>
+      <div class="top-brand-bar">
+        <div class="top-brand-pill">
+          <img src="/arcagent-logo.png" alt="ArcAgent Logo" class="top-brand-icon" />
+          <span>arcagent</span>
+        </div>
+      </div>
+
       <div class="header-row">
         <div class="brand-wrap">
           <img src="/arcagent-logo.png" alt="ArcAgent Logo" class="brand-logo" />
@@ -79,6 +86,7 @@ document.querySelector('#app').innerHTML = `
             <div class="tagline">// autonomous on-chain commerce protocol</div>
           </div>
         </div>
+
         <div class="wallet-panel">
           <div class="wallet-badge" id="walletBadge">
             <div class="dot"></div>
@@ -192,7 +200,10 @@ document.getElementById('lookupBtn').addEventListener('click', lookupOrder)
 
 async function connectWallet() {
   try {
-    await modal.open()
+    const modal = window.appKit || null
+    if (modal && typeof modal.open === 'function') {
+      await modal.open()
+    }
 
     const provider = await getWalletProviderSafe()
     if (!provider) {
@@ -222,17 +233,7 @@ async function connectWallet() {
 
 async function getWalletProviderSafe() {
   try {
-    if (typeof modal.getWalletProvider === 'function') {
-      const p = await modal.getWalletProvider()
-      if (p) return p
-    }
-  } catch {}
-
-  try {
-    if (typeof modal.getProvider === 'function') {
-      const p = await modal.getProvider()
-      if (p) return p
-    }
+    if (window.ethereum) return window.ethereum
   } catch {}
 
   try {
@@ -371,7 +372,54 @@ async function placeOrder() {
     const tx = await agent.placeOrder(item, amount)
     await tx.wait()
 
-    showStatus('placeStatus', `✓ Order placed! Tx: ${tx.hash}`, 'success')
+    let newOrderId = null
+
+    try {
+      const updatedCount = await agent.orderCount()
+      newOrderId = Number(updatedCount)
+    } catch {}
+
+    const placeStatusEl = document.getElementById('placeStatus')
+    placeStatusEl.className = 'status success'
+    placeStatusEl.style.display = 'block'
+
+    let html = '<div><strong>✓ Order placed successfully.</strong></div>'
+
+    if (newOrderId) {
+      html += `<div style="margin-top:6px;"><strong>Order ID:</strong> <span id="newOrderIdText">#${newOrderId}</span></div>`
+      html += `<button id="copyOrderIdBtn" type="button" style="margin-top:8px;">Copy Order ID</button>`
+    }
+
+    html += `<div style="margin-top:6px;"><strong>Tx:</strong> ${tx.hash}</div>`
+
+    placeStatusEl.innerHTML = html
+
+    if (newOrderId) {
+      const copyBtn = document.getElementById('copyOrderIdBtn')
+      if (copyBtn) {
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(String(newOrderId))
+            copyBtn.textContent = 'Copied!'
+            setTimeout(() => {
+              copyBtn.textContent = 'Copy Order ID'
+            }, 1500)
+          } catch {
+            copyBtn.textContent = 'Copy failed'
+            setTimeout(() => {
+              copyBtn.textContent = 'Copy Order ID'
+            }, 1500)
+          }
+        })
+      }
+
+      const lookupInput = document.getElementById('lookupId')
+      const execInput = document.getElementById('execOrderId')
+
+      if (lookupInput) lookupInput.value = String(newOrderId)
+      if (execInput) execInput.value = String(newOrderId)
+    }
+
     document.getElementById('itemName').value = ''
     document.getElementById('orderAmount').value = ''
 
