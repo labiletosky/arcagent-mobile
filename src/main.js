@@ -75,6 +75,7 @@ document.querySelector('#app').innerHTML = `
           <img src="/arcagent-logo.png" alt="ArcAgent Logo" class="top-brand-icon" />
           <span>arcagent</span>
         </div>
+        <a href="./index.html" class="top-home-link">Home</a>
       </div>
 
       <div class="header-row">
@@ -200,11 +201,6 @@ document.getElementById('lookupBtn').addEventListener('click', lookupOrder)
 
 async function connectWallet() {
   try {
-    const modal = window.appKit || null
-    if (modal && typeof modal.open === 'function') {
-      await modal.open()
-    }
-
     const provider = await getWalletProviderSafe()
     if (!provider) {
       showStatus('placeStatus', 'No wallet provider found after connect.', 'error')
@@ -215,6 +211,8 @@ async function connectWallet() {
     browserProvider = new ethers.BrowserProvider(provider)
 
     await ensureArcNetwork(provider)
+
+    await provider.request({ method: 'eth_requestAccounts' })
 
     signer = await browserProvider.getSigner()
     connectedAddress = await signer.getAddress()
