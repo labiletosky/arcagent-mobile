@@ -148,6 +148,100 @@
         line-height: 1.6;
       }
 
+      /* How it works */
+      .how-section {
+        margin: 32px 0 24px;
+        border-top: 1px solid var(--border);
+        padding-top: 28px;
+      }
+
+      .section-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        color: var(--muted);
+        margin-bottom: 20px;
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .step {
+        background: #f4efe2;
+        border: 1px solid var(--border);
+        padding: 16px;
+        position: relative;
+      }
+
+      .step-num {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--accent);
+        line-height: 1;
+        margin-bottom: 8px;
+      }
+
+      .step-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .step-text {
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      /* Contract info */
+      .contract-section {
+        margin: 24px 0;
+        border-top: 1px solid var(--border);
+        padding-top: 24px;
+      }
+
+      .contract-box {
+        background: #2c3240;
+        color: #fff;
+        padding: 16px 20px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .contract-label {
+        font-size: 10px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #8a9ab0;
+        margin-bottom: 4px;
+      }
+
+      .contract-addr {
+        font-size: 13px;
+        color: var(--accent);
+        word-break: break-all;
+      }
+
+      .contract-link {
+        display: inline-block;
+        background: var(--accent);
+        color: #fff;
+        padding: 8px 14px;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
       .cta-row {
         display: flex;
         flex-wrap: wrap;
@@ -183,6 +277,11 @@
         color: #3b3730;
       }
 
+      .btn-dark {
+        background: #2c3240;
+        color: #fff;
+      }
+
       .mini-note {
         margin-top: 18px;
         font-size: 12px;
@@ -191,55 +290,22 @@
       }
 
       @media (max-width: 900px) {
-        h1 {
-          font-size: 52px;
-        }
-
-        .points {
-          grid-template-columns: 1fr;
-        }
+        h1 { font-size: 52px; }
+        .points { grid-template-columns: 1fr; }
+        .steps { grid-template-columns: repeat(2, 1fr); }
       }
 
       @media (max-width: 520px) {
-        .container {
-          padding: 18px 14px 40px;
-        }
-
-        .hero {
-          padding: 22px 16px;
-        }
-
-        .hero-head {
-          align-items: flex-start;
-        }
-
-        .hero-logo {
-          width: 64px;
-          height: 64px;
-        }
-
-        .eyebrow {
-          font-size: 10px;
-          letter-spacing: 3px;
-        }
-
-        h1 {
-          font-size: 38px;
-        }
-
-        .tagline {
-          font-size: 10px;
-          letter-spacing: 2px;
-        }
-
-        .lead {
-          font-size: 14px;
-        }
-
-        .btn {
-          width: 100%;
-          text-align: center;
-        }
+        .container { padding: 18px 14px 40px; }
+        .hero { padding: 22px 16px; }
+        .hero-head { align-items: flex-start; }
+        .hero-logo { width: 64px; height: 64px; }
+        .eyebrow { font-size: 10px; letter-spacing: 3px; }
+        h1 { font-size: 38px; }
+        .tagline { font-size: 10px; letter-spacing: 2px; }
+        .lead { font-size: 14px; }
+        .btn { width: 100%; text-align: center; }
+        .steps { grid-template-columns: 1fr; }
       }
     </style>
   </head>
@@ -290,14 +356,54 @@
           </div>
         </div>
 
+        <!-- How it works -->
+        <div class="how-section">
+          <div class="section-title">How it works</div>
+          <div class="steps">
+            <div class="step">
+              <div class="step-num">01</div>
+              <div class="step-title">Connect Wallet</div>
+              <div class="step-text">Connect your Rabby or MetaMask wallet and switch to Arc Testnet.</div>
+            </div>
+            <div class="step">
+              <div class="step-num">02</div>
+              <div class="step-title">Place Order</div>
+              <div class="step-text">Enter an item name and USDC amount. Payment locks into the smart contract instantly.</div>
+            </div>
+            <div class="step">
+              <div class="step-num">03</div>
+              <div class="step-title">Agent Executes</div>
+              <div class="step-text">The approved agent confirms delivery and triggers payment release on-chain.</div>
+            </div>
+            <div class="step">
+              <div class="step-num">04</div>
+              <div class="step-title">Payment Settles</div>
+              <div class="step-text">Funds move instantly to the seller. No bank, no waiting, no middleman.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contract Address -->
+        <div class="contract-section">
+          <div class="section-title">Smart Contract</div>
+          <div class="contract-box">
+            <div>
+              <div class="contract-label">ArcAgent Contract — Arc Testnet</div>
+              <div class="contract-addr">0x880A0e6c1eD42E1B1C3ce70f51aE6d0314911c52</div>
+            </div>
+            <a href="https://testnet.arcscan.app/address/0x880A0e6c1eD42E1B1C3ce70f51aE6d0314911c52" target="_blank" rel="noopener noreferrer" class="contract-link">View on ArcScan ↗</a>
+          </div>
+        </div>
+
         <div class="cta-row">
           <a href="./app.html" class="btn btn-primary">Launch App</a>
           <a href="https://faucet.circle.com" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Get Test USDC</a>
           <a href="https://arcagent-api.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn btn-light">View API</a>
+          <a href="https://github.com/labiletosky/arcagent-mobile" target="_blank" rel="noopener noreferrer" class="btn btn-dark">GitHub ↗</a>
         </div>
 
         <div class="mini-note">
-          Best tested with Rabby or MetaMask.
+          Best tested with Rabby or MetaMask. · Built by <a href="https://github.com/labiletosky" target="_blank" style="color: var(--accent); text-decoration: none;">labiletosky</a> on Arc Testnet.
         </div>
       </section>
     </div>
