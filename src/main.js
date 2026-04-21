@@ -12,7 +12,6 @@ const ARC_CHAIN_ID_HEX = '0x4CEF52'
 const ARC_RPC_URL = 'https://rpc.testnet.arc.network'
 const ARC_EXPLORER_URL = 'https://testnet.arcscan.app'
 const FAUCET_URL = 'https://faucet.circle.com'
-const API_BASE_URL =  'https://arcagent-api-tl8s.vercel.app'
 
 const AGENT_ABI = [
   'function placeOrder(string memory item, uint256 amount) returns (uint256)',
@@ -180,22 +179,6 @@ document.querySelector('#app').innerHTML = `
           <div class="empty-state">Loading recent orders...</div>
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-title"><span>Birdeye Market Intel</span></div>
-        <div class="field">
-          <label>Token Address</label>
-          <input
-            type="text"
-            id="birdeyeTokenAddress"
-            placeholder="e.g. So11111111111111111111111111111111111111112"
-            value="So11111111111111111111111111111111111111112"
-          />
-        </div>
-        <button class="action-btn" id="birdeyeCheckBtn">Check Token</button>
-        <div class="status" id="birdeyeStatus"></div>
-        <div class="status" id="birdeyeSummary" style="white-space: pre-wrap;"></div>
-      </div>
     </div>
   </div>
 `
@@ -215,7 +198,6 @@ disconnectBtn.addEventListener('click', disconnectWallet)
 document.getElementById('placeBtn').addEventListener('click', placeOrder)
 document.getElementById('execBtn').addEventListener('click', executeOrder)
 document.getElementById('lookupBtn').addEventListener('click', lookupOrder)
-document.getElementById('birdeyeCheckBtn').addEventListener('click', checkBirdeyeToken)
 
 async function connectWallet() {
   try {
@@ -503,59 +485,6 @@ async function lookupOrder() {
   } catch {
     showStatus('lookupStatus', 'Order not found.', 'error')
   }
-}
-
-async function checkBirdeyeToken() {
-  const address = document.getElementById('birdeyeTokenAddress').value.trim()
-  const checkBtn = document.getElementById('birdeyeCheckBtn')
-
-  if (!address) {
-    showStatus('birdeyeStatus', 'Enter a token address.', 'error')
-    return
-  }
-
-  checkBtn.disabled = true
-  showStatus('birdeyeStatus', 'Checking Birdeye market data...', 'loading')
-  document.getElementById('birdeyeSummary').style.display = 'none'
-  document.getElementById('birdeyeSummary').textContent = ''
-
-  try {
-    const tokenRes = await fetch(`${API_BASE_URL}/birdeye/token?address=${encodeURIComponent(address)}`)
-    const tokenJson = await tokenRes.json()
-
-    if (!tokenRes.ok || !tokenJson.success) {
-      throw new Error(tokenJson?.error?.message || tokenJson?.error || 'Could not fetch token data.')
-    }
-
-    const token = tokenJson?.data?.data || {}
-    const name = token.name || 'Unknown Token'
-    const symbol = token.symbol || 'N/A'
-    const price = token.price ?? 'N/A'
-    const change24h = token.priceChange24hPercent ?? token.price_change_24h_percent ?? 'N/A'
-    const liquidity = token.liquidity ?? token.liquidityUSD ?? token.liquidity_usd ?? 'N/A'
-    const volume24h = token.v24hUSD ?? token.volume24hUSD ?? token.volume_24h_usd ?? 'N/A'
-
-    showStatus(
-      'birdeyeStatus',
-      `Token: ${name} (${symbol})
-Price: ${price}
-24h Change: ${change24h}
-24h Volume: ${volume24h}
-Liquidity: ${liquidity}`,
-      'success'
-    )
-
-    const summaryRes = await fetch(`${API_BASE_URL}/birdeye/summary?address=${encodeURIComponent(address)}`)
-    const summaryJson = await summaryRes.json()
-
-    if (summaryRes.ok && summaryJson.success) {
-      showStatus('birdeyeSummary', summaryJson.summary, 'success')
-    }
-  } catch (e) {
-    showStatus('birdeyeStatus', `Failed: ${e?.message || e}`, 'error')
-  }
-
-  checkBtn.disabled = false
 }
 
 function disconnectWallet() {
