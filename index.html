@@ -7,76 +7,54 @@
     <title>ArcAgent</title>
     <style>
       :root {
-        --bg: #f8fafc;
-        --bg-soft: #eef4f8;
-        --panel: rgba(255, 255, 255, 0.9);
-        --panel-solid: #ffffff;
-        --text: #1f2937;
-        --muted: #6b7280;
-        --border: #dbe4ee;
-        --border-strong: #cbd8e6;
-        --accent: #f0b429;
-        --accent-hover: #dc9f16;
-        --accent2: #4f6b86;
-        --accent2-hover: #40586e;
-        --dark: #111827;
-        --shadow: 0 16px 40px rgba(15, 23, 42, 0.07);
-        --shadow-soft: 0 8px 22px rgba(15, 23, 42, 0.05);
-        --radius: 22px;
-        --radius-sm: 14px;
+        --bg: #f5f1e8;
+        --panel: #fcfaf4;
+        --text: #2e2a24;
+        --muted: #8a846f;
+        --border: #d8cfbb;
+        --accent: #d3ad34;
+        --accent2: #536573;
+        --shadow: 0 12px 28px rgba(64, 49, 21, 0.06);
       }
 
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
 
-      html,
-      body {
+      html, body {
         margin: 0;
         padding: 0;
-        min-height: 100%;
+        background: var(--bg);
         color: var(--text);
-        font-family: Inter, "Segoe UI", Arial, sans-serif;
-        background:
-          radial-gradient(circle at top left, rgba(240, 180, 41, 0.10), transparent 24%),
-          linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
+        font-family: "Courier New", Courier, monospace;
       }
 
       body {
         min-height: 100vh;
       }
 
-      a,
-      button {
-        font: inherit;
-      }
-
       .container {
-        max-width: 1140px;
+        max-width: 1100px;
         margin: 0 auto;
-        padding: 28px 20px 72px;
+        padding: 24px 18px 60px;
       }
 
       .topbar {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 20px;
+        justify-content: flex-start;
+        margin-bottom: 22px;
       }
 
       .brand-pill {
         display: inline-flex;
         align-items: center;
-        gap: 9px;
-        background: var(--dark);
+        gap: 8px;
+        background: #2c3240;
         color: #fff;
-        padding: 9px 14px;
-        border-radius: 999px;
-        box-shadow: var(--shadow-soft);
+        padding: 7px 12px;
+        border-top: 1px solid #3b4354;
+        border-bottom: 3px solid #1c2130;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
         text-transform: lowercase;
         font-size: 13px;
-        font-weight: 600;
         letter-spacing: 0.2px;
         line-height: 1;
       }
@@ -85,38 +63,14 @@
         width: 14px;
         height: 14px;
         object-fit: contain;
-        border-radius: 4px;
-      }
-
-      .top-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        background: rgba(255, 255, 255, 0.85);
-        color: var(--text);
-        border: 1px solid var(--border);
-        padding: 10px 14px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-        transition: 0.18s ease;
-      }
-
-      .top-link:hover {
-        transform: translateY(-1px);
-        background: #fff;
+        border-radius: 2px;
       }
 
       .hero {
         background: var(--panel);
         border: 1px solid var(--border);
-        border-radius: 28px;
-        padding: 30px;
+        padding: 34px 28px;
         box-shadow: var(--shadow);
-        backdrop-filter: blur(8px);
       }
 
       .hero-head {
@@ -127,31 +81,27 @@
       }
 
       .hero-logo {
-        width: 88px;
-        height: 88px;
+        width: 92px;
+        height: 92px;
         object-fit: cover;
-        border-radius: 22px;
-        background: #111827;
-        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
-        flex: 0 0 auto;
+        border-radius: 18px;
+        background: #1d1d1d;
       }
 
       .eyebrow {
         font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 4px;
+        letter-spacing: 5px;
         text-transform: uppercase;
         color: var(--muted);
-        margin-bottom: 8px;
+        margin-bottom: 6px;
       }
 
       h1 {
         margin: 0;
         font-size: 68px;
-        line-height: 0.94;
-        letter-spacing: -2px;
-        font-weight: 800;
-        color: var(--dark);
+        line-height: 0.92;
+        letter-spacing: -1px;
+        font-weight: 700;
       }
 
       h1 span {
@@ -159,279 +109,203 @@
       }
 
       .tagline {
-        margin-top: 10px;
+        margin-top: 8px;
         color: var(--muted);
-        font-size: 14px;
-        line-height: 1.6;
-        letter-spacing: 0.8px;
+        font-size: 12px;
+        letter-spacing: 3px;
       }
 
       .lead {
-        max-width: 780px;
+        max-width: 760px;
         font-size: 16px;
-        line-height: 1.85;
-        margin: 22px 0 22px;
-        color: #334155;
+        line-height: 1.8;
+        margin: 22px 0 18px;
       }
 
       .points {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 16px;
-        margin: 26px 0;
+        gap: 14px;
+        margin: 24px 0;
       }
 
       .point {
-        background: #f9fbfd;
+        background: #f4efe2;
         border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 18px;
-        box-shadow: var(--shadow-soft);
+        padding: 16px;
       }
 
       .point-title {
         font-size: 11px;
         text-transform: uppercase;
-        letter-spacing: 2px;
-        color: #64748b;
+        letter-spacing: 3px;
+        color: var(--muted);
         margin-bottom: 8px;
-        font-weight: 700;
       }
 
       .point-text {
         font-size: 14px;
-        line-height: 1.7;
-        color: #334155;
+        line-height: 1.6;
       }
 
-      .how-section,
-      .contract-section {
-        margin-top: 30px;
-        padding-top: 26px;
+      /* How it works */
+      .how-section {
+        margin: 32px 0 24px;
         border-top: 1px solid var(--border);
+        padding-top: 28px;
       }
 
       .section-title {
-        font-size: 12px;
+        font-size: 11px;
         text-transform: uppercase;
-        letter-spacing: 3px;
-        color: #64748b;
-        margin-bottom: 18px;
-        font-weight: 800;
+        letter-spacing: 4px;
+        color: var(--muted);
+        margin-bottom: 20px;
       }
 
       .steps {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 16px;
+        gap: 14px;
       }
 
       .step {
-        background: #f9fbfd;
+        background: #f4efe2;
         border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 18px;
-        box-shadow: var(--shadow-soft);
+        padding: 16px;
+        position: relative;
       }
 
       .step-num {
-        font-size: 30px;
-        font-weight: 800;
+        font-size: 28px;
+        font-weight: 700;
         color: var(--accent);
         line-height: 1;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
       }
 
       .step-title {
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 2px;
-        color: #64748b;
+        color: var(--muted);
         margin-bottom: 6px;
-        font-weight: 700;
       }
 
       .step-text {
         font-size: 13px;
-        line-height: 1.7;
-        color: #334155;
+        line-height: 1.6;
+      }
+
+      /* Contract info */
+      .contract-section {
+        margin: 24px 0;
+        border-top: 1px solid var(--border);
+        padding-top: 24px;
       }
 
       .contract-box {
-        background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+        background: #2c3240;
         color: #fff;
-        border-radius: 20px;
-        padding: 18px 20px;
+        padding: 16px 20px;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 14px;
-        box-shadow: var(--shadow-soft);
+        gap: 12px;
       }
 
       .contract-label {
         font-size: 10px;
-        letter-spacing: 2px;
+        letter-spacing: 3px;
         text-transform: uppercase;
-        color: #93a4ba;
-        margin-bottom: 5px;
-        font-weight: 700;
+        color: #8a9ab0;
+        margin-bottom: 4px;
       }
 
       .contract-addr {
         font-size: 13px;
-        color: #f5c451;
+        color: var(--accent);
         word-break: break-all;
-        line-height: 1.6;
       }
 
       .contract-link {
         display: inline-block;
-        background: linear-gradient(180deg, var(--accent) 0%, var(--accent-hover) 100%);
+        background: var(--accent);
         color: #fff;
-        padding: 10px 14px;
+        padding: 8px 14px;
         text-decoration: none;
-        border-radius: 12px;
         font-size: 11px;
         font-weight: 700;
-        letter-spacing: 1.2px;
+        letter-spacing: 2px;
         text-transform: uppercase;
         white-space: nowrap;
-        box-shadow: var(--shadow-soft);
       }
 
       .cta-row {
         display: flex;
         flex-wrap: wrap;
         gap: 12px;
-        margin-top: 28px;
+        margin-top: 26px;
       }
 
       .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        display: inline-block;
         text-decoration: none;
         border: none;
         cursor: pointer;
         padding: 14px 18px;
-        border-radius: 14px;
+        font: inherit;
         font-size: 13px;
         font-weight: 700;
-        letter-spacing: 1.2px;
+        letter-spacing: 2px;
         text-transform: uppercase;
-        transition: 0.18s ease;
-        box-shadow: var(--shadow-soft);
-      }
-
-      .btn:hover,
-      .contract-link:hover {
-        transform: translateY(-1px);
       }
 
       .btn-primary {
-        background: linear-gradient(180deg, var(--accent) 0%, var(--accent-hover) 100%);
+        background: var(--accent);
         color: #fff;
       }
 
       .btn-secondary {
-        background: linear-gradient(180deg, var(--accent2) 0%, var(--accent2-hover) 100%);
+        background: var(--accent2);
         color: #fff;
       }
 
       .btn-light {
-        background: linear-gradient(180deg, #edf2f7 0%, #dde6ef 100%);
-        color: #334155;
+        background: #d9d3c6;
+        color: #3b3730;
       }
 
       .btn-dark {
-        background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+        background: #2c3240;
         color: #fff;
       }
 
       .mini-note {
         margin-top: 18px;
-        font-size: 13px;
-        line-height: 1.7;
+        font-size: 12px;
+        line-height: 1.6;
         color: var(--muted);
       }
 
-      .mini-note a {
-        color: var(--accent);
-        text-decoration: none;
-        font-weight: 700;
-      }
-
       @media (max-width: 900px) {
-        h1 {
-          font-size: 52px;
-        }
-
-        .points {
-          grid-template-columns: 1fr;
-        }
-
-        .steps {
-          grid-template-columns: repeat(2, 1fr);
-        }
+        h1 { font-size: 52px; }
+        .points { grid-template-columns: 1fr; }
+        .steps { grid-template-columns: repeat(2, 1fr); }
       }
 
-      @media (max-width: 640px) {
-        .container {
-          padding: 18px 14px 42px;
-        }
-
-        .topbar {
-          flex-direction: column;
-          align-items: stretch;
-        }
-
-        .brand-pill,
-        .top-link {
-          width: 100%;
-          justify-content: center;
-        }
-
-        .hero {
-          padding: 22px 16px;
-        }
-
-        .hero-head {
-          align-items: flex-start;
-        }
-
-        .hero-logo {
-          width: 64px;
-          height: 64px;
-          border-radius: 16px;
-        }
-
-        .eyebrow {
-          font-size: 10px;
-          letter-spacing: 3px;
-        }
-
-        h1 {
-          font-size: 40px;
-        }
-
-        .tagline {
-          font-size: 12px;
-        }
-
-        .lead {
-          font-size: 14px;
-        }
-
-        .btn {
-          width: 100%;
-          text-align: center;
-        }
-
-        .steps {
-          grid-template-columns: 1fr;
-        }
+      @media (max-width: 520px) {
+        .container { padding: 18px 14px 40px; }
+        .hero { padding: 22px 16px; }
+        .hero-head { align-items: flex-start; }
+        .hero-logo { width: 64px; height: 64px; }
+        .eyebrow { font-size: 10px; letter-spacing: 3px; }
+        h1 { font-size: 38px; }
+        .tagline { font-size: 10px; letter-spacing: 2px; }
+        .lead { font-size: 14px; }
+        .btn { width: 100%; text-align: center; }
+        .steps { grid-template-columns: 1fr; }
       }
     </style>
   </head>
@@ -442,7 +316,6 @@
           <img src="/arcagent-logo.png" alt="ArcAgent Logo" />
           <span>arcagent</span>
         </div>
-        <a href="./app.html" class="top-link">Open App</a>
       </div>
 
       <section class="hero">
@@ -464,7 +337,7 @@
           <div class="point">
             <div class="point-title">Place Orders</div>
             <div class="point-text">
-              Users can create simple on-chain orders with an item and amount.
+              Users can create simple onchain orders with an item and amount.
             </div>
           </div>
 
@@ -483,6 +356,7 @@
           </div>
         </div>
 
+        <!-- How it works -->
         <div class="how-section">
           <div class="section-title">How it works</div>
           <div class="steps">
@@ -509,14 +383,15 @@
           </div>
         </div>
 
+        <!-- Contract Address -->
         <div class="contract-section">
           <div class="section-title">Smart Contract</div>
           <div class="contract-box">
             <div>
               <div class="contract-label">ArcAgent Contract — Arc Testnet</div>
-              <div class="contract-addr">0x909e3E7b5F4257B1C5Add949B1678025a4b7343f</div>
+              <div class="contract-addr">0x311C7939d6026707029A191DF77F1D56e9992807</div>
             </div>
-            <a href="https://testnet.arcscan.app/address/0x909e3E7b5F4257B1C5Add949B1678025a4b7343f" target="_blank" rel="noopener noreferrer" class="contract-link">View on ArcScan ↗</a>
+            <a href="https://testnet.arcscan.app/address/0x311C7939d6026707029A191DF77F1D56e9992807" target="_blank" rel="noopener noreferrer" class="contract-link">View on ArcScan ↗</a>
           </div>
         </div>
 
@@ -528,9 +403,7 @@
         </div>
 
         <div class="mini-note">
-          Best tested with Rabby or MetaMask. · Built by
-          <a href="https://github.com/labiletosky" target="_blank" rel="noopener noreferrer">labiletosky</a>
-          on Arc Testnet.
+          Best tested with Rabby or MetaMask. · Built by <a href="https://github.com/labiletosky" target="_blank" style="color: var(--accent); text-decoration: none;">labiletosky</a> on Arc Testnet.
         </div>
       </section>
     </div>

@@ -4,7 +4,7 @@ import { createAppKit } from '@reown/appkit'
 import { EthersAdapter } from '@reown/appkit-adapter-ethers'
 
 const PROJECT_ID = '3f606d90e27edfdd5d9d6b7f3a469448'
-const AGENT_ADDR = '0x3C5375e4e93DE100d6A3F727019C1773B08f50Dc'
+const AGENT_ADDR = '0x311C7939d6026707029A191DF77F1D56e9992807'
 const TOKEN_ADDR = '0x3600000000000000000000000000000000000000'
 const ARC_CHAIN_ID = 5042002
 const ARC_CHAIN_ID_HEX = '0x4CEF52'
@@ -13,10 +13,10 @@ const ARC_EXPLORER_URL = 'https://testnet.arcscan.app'
 const FAUCET_URL = 'https://faucet.circle.com'
 
 const AGENT_ABI = [
-  'function placeOrder(string memory item, uint256 amount) returns (uint256)',
+  'function placeOrder(string memory item, uint256 amount, address receiver) returns (uint256)',
   'function executeOrder(uint256 orderId)',
   'function claimRefund(uint256 orderId)',
-  'function getOrder(uint256 orderId) view returns (tuple(uint256 id, address buyer, string item, uint256 amount, bool executed, bool refunded, uint256 timestamp, uint256 deadline))',
+  'function getOrder(uint256 orderId) view returns (tuple(uint256 id, address buyer, address receiver, string item, uint256 amount, bool executed, bool refunded, uint256 timestamp, uint256 deadline))',
   'function orderCount() view returns (uint256)',
   'function getTimeRemaining(uint256 orderId) view returns (uint256)'
 ]
@@ -122,6 +122,10 @@ document.querySelector('#app').innerHTML = `
         <div class="field">
           <label>Amount (USDC)</label>
           <input type="number" id="orderAmount" placeholder="e.g. 10" />
+        </div>
+        <div class="field">
+          <label>Receiver Address</label>
+          <input type="text" id="receiverAddr" placeholder="0x... wallet to receive payment" />
         </div>
         <div class="help-box">
           <p class="helper-text">Arc Testnet uses USDC for gas and testing.</p>
@@ -335,13 +339,15 @@ async function placeOrder() {
   try {
     const parsed = parseFloat(amt)
     if (isNaN(parsed) || parsed <= 0) throw new Error('Enter a valid amount.')
+    const receiver = document.getElementById('receiverAddr').value.trim()
+    if (!receiver || !receiver.startsWith('0x')) throw new Error('Enter a valid receiver address.')
     const amount = ethers.parseUnits(String(parsed), 6)
     const token = new ethers.Contract(TOKEN_ADDR, TOKEN_ABI, signer)
     const approveTx = await token.approve(AGENT_ADDR, amount)
     await approveTx.wait()
     showStatus('placeStatus', 'Placing order...', 'loading')
     const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, signer)
-    const tx = await agent.placeOrder(item, amount)
+    const tx = await agent.placeOrder(item, amount, receiver)
     await tx.wait()
     let newOrderId = null
     try {
