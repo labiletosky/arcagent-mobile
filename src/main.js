@@ -12,6 +12,17 @@ const ARC_RPC_URL = 'https://rpc.testnet.arc.network'
 const ARC_EXPLORER_URL = 'https://testnet.arcscan.app'
 const FAUCET_URL = 'https://faucet.circle.com'
 
+const CATEGORIES = ['Commerce', 'Freelance', 'API', 'Data', 'Content', 'Other']
+
+const CATEGORY_COLORS = {
+  'Commerce': '#d3ad34',
+  'Freelance': '#3b82f6',
+  'API': '#8b5cf6',
+  'Data': '#10b981',
+  'Content': '#f59e0b',
+  'Other': '#6b7280'
+}
+
 const AGENT_ABI = [
   'function placeOrder(string memory item, uint256 amount, address receiver) returns (uint256)',
   'function executeOrder(uint256 orderId)',
@@ -30,22 +41,9 @@ const arcTestnet = {
   id: ARC_CHAIN_ID,
   name: 'Arc Testnet',
   chainNamespace: 'eip155',
-  nativeCurrency: {
-    name: 'USDC',
-    symbol: 'USDC',
-    decimals: 18
-  },
-  rpcUrls: {
-    default: {
-      http: [ARC_RPC_URL]
-    }
-  },
-  blockExplorers: {
-    default: {
-      name: 'ArcScan',
-      url: ARC_EXPLORER_URL
-    }
-  }
+  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+  rpcUrls: { default: { http: [ARC_RPC_URL] } },
+  blockExplorers: { default: { name: 'ArcScan', url: ARC_EXPLORER_URL } }
 }
 
 const metadata = {
@@ -62,10 +60,10 @@ createAppKit({
   metadata,
   networks: [arcTestnet],
   defaultNetwork: arcTestnet,
-  features: {
-    analytics: false
-  }
+  features: { analytics: false }
 })
+
+const categoryOptions = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('')
 
 document.querySelector('#app').innerHTML = `
   <div class="container">
@@ -116,6 +114,12 @@ document.querySelector('#app').innerHTML = `
       <div class="card">
         <div class="card-title"><span>Place Order</span></div>
         <div class="field">
+          <label>Category</label>
+          <select id="orderCategory">
+            ${categoryOptions}
+          </select>
+        </div>
+        <div class="field">
           <label>Item Name</label>
           <input type="text" id="itemName" placeholder="e.g. Coffee, API Call..." />
         </div>
@@ -146,9 +150,7 @@ document.querySelector('#app').innerHTML = `
           <input type="text" value="AUTO_EXECUTE_PAYMENT" readonly />
         </div>
         <div class="help-box notice-box">
-          <p class="helper-text notice-text">
-            Only the approved agent wallet can execute orders.
-          </p>
+          <p class="helper-text notice-text">Only the approved agent wallet can execute orders.</p>
         </div>
         <button class="action-btn secondary" id="execBtn">Execute via Agent</button>
         <div class="status" id="execStatus"></div>
@@ -161,9 +163,7 @@ document.querySelector('#app').innerHTML = `
           <input type="number" id="refundOrderId" placeholder="e.g. 1" />
         </div>
         <div class="help-box notice-box">
-          <p class="helper-text notice-text">
-            If agent doesn't execute within 24 hours, you can claim a full refund.
-          </p>
+          <p class="helper-text notice-text">If agent doesn't execute within 24 hours, you can claim a full refund.</p>
         </div>
         <button class="action-btn refund" id="refundBtn">Claim Refund</button>
         <div class="status" id="refundStatus"></div>
@@ -209,10 +209,7 @@ document.getElementById('lookupBtn').addEventListener('click', lookupOrder)
 async function connectWallet() {
   try {
     const provider = await getWalletProviderSafe()
-    if (!provider) {
-      showStatus('placeStatus', 'No wallet provider found after connect.', 'error')
-      return
-    }
+    if (!provider) { showStatus('placeStatus', 'No wallet provider found after connect.', 'error'); return }
     rawProvider = provider
     browserProvider = new ethers.BrowserProvider(provider)
     await ensureArcNetwork(provider)
@@ -231,9 +228,7 @@ async function connectWallet() {
 }
 
 async function getWalletProviderSafe() {
-  try {
-    if (window.ethereum) return window.ethereum
-  } catch {}
+  try { if (window.ethereum) return window.ethereum } catch {}
   try {
     if (ethersAdapter && typeof ethersAdapter.getProvider === 'function') {
       const p = await ethersAdapter.getProvider()
@@ -245,25 +240,14 @@ async function getWalletProviderSafe() {
 
 async function ensureArcNetwork(provider) {
   try {
-    await provider.request({
-      method: 'wallet_switchEthereumChain',
-      params: [{ chainId: ARC_CHAIN_ID_HEX }]
-    })
+    await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ARC_CHAIN_ID_HEX }] })
   } catch (e) {
     if (e?.code === 4902 || String(e?.message || '').toLowerCase().includes('unrecognized chain')) {
       await provider.request({
         method: 'wallet_addEthereumChain',
-        params: [{
-          chainId: ARC_CHAIN_ID_HEX,
-          chainName: 'Arc Testnet',
-          rpcUrls: [ARC_RPC_URL],
-          nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
-          blockExplorerUrls: [ARC_EXPLORER_URL]
-        }]
+        params: [{ chainId: ARC_CHAIN_ID_HEX, chainName: 'Arc Testnet', rpcUrls: [ARC_RPC_URL], nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 }, blockExplorerUrls: [ARC_EXPLORER_URL] }]
       })
-    } else {
-      throw e
-    }
+    } else { throw e }
   }
 }
 
@@ -271,13 +255,26 @@ function getReadProvider() {
   return browserProvider || new ethers.JsonRpcProvider(ARC_RPC_URL)
 }
 
+function getCategoryFromItem(item) {
+  const lower = item.toLowerCase()
+  if (lower.includes('[commerce]')) return 'Commerce'
+  if (lower.includes('[freelance]')) return 'Freelance'
+  if (lower.includes('[api]')) return 'API'
+  if (lower.includes('[data]')) return 'Data'
+  if (lower.includes('[content]')) return 'Content'
+  return 'Other'
+}
+
+function cleanItemName(item) {
+  return item.replace(/\[(commerce|freelance|api|data|content|other)\]/gi, '').trim()
+}
+
 async function loadStats() {
   try {
     const readProvider = getReadProvider()
     const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, readProvider)
     const total = Number(await agent.orderCount())
-    let pending = 0
-    let executed = 0
+    let pending = 0, executed = 0
     const start = Math.max(1, total - 19)
     for (let i = start; i <= total; i++) {
       const o = await agent.getOrder(i)
@@ -287,9 +284,7 @@ async function loadStats() {
     document.getElementById('statOrders').textContent = total
     document.getElementById('statPending').textContent = pending
     document.getElementById('statExecuted').textContent = executed
-  } catch (e) {
-    console.error('loadStats error:', e)
-  }
+  } catch (e) { console.error('loadStats error:', e) }
 }
 
 async function loadRecentOrders() {
@@ -298,24 +293,26 @@ async function loadRecentOrders() {
     const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, readProvider)
     const count = Number(await agent.orderCount())
     const list = document.getElementById('ordersList')
-    if (count === 0) {
-      list.innerHTML = '<div class="empty-state">No orders yet. Place one above.</div>'
-      return
-    }
+    if (count === 0) { list.innerHTML = '<div class="empty-state">No orders yet. Place one above.</div>'; return }
     list.innerHTML = ''
     const start = Math.max(1, count - 4)
     for (let i = count; i >= start; i--) {
       const o = await agent.getOrder(i)
       const amt = parseFloat(ethers.formatUnits(o.amount, 6)).toFixed(2)
-      let statusLabel = 'Pending'
-      let statusClass = 'pending'
+      let statusLabel = 'Pending', statusClass = 'pending'
       if (o.executed) { statusLabel = 'Done'; statusClass = 'executed' }
       if (o.refunded) { statusLabel = 'Refunded'; statusClass = 'refunded' }
+      const category = getCategoryFromItem(o.item)
+      const itemName = cleanItemName(o.item)
+      const catColor = CATEGORY_COLORS[category] || '#6b7280'
       list.innerHTML += `
         <div class="order-item">
           <div class="order-id">#${Number(o.id)}</div>
           <div class="order-details">
-            <div class="order-item-name">${o.item}</div>
+            <div class="order-item-name">
+              ${itemName}
+              <span style="font-size:9px;padding:2px 8px;border-radius:4px;background:${catColor}22;color:${catColor};border:1px solid ${catColor}44;margin-left:6px;letter-spacing:1px;text-transform:uppercase;">${category}</span>
+            </div>
             <div class="order-meta">${amt} USDC · ${o.buyer.slice(0, 6)}...${o.buyer.slice(-4)}</div>
           </div>
           <div class="order-status ${statusClass}">${statusLabel}</div>
@@ -331,6 +328,7 @@ async function loadRecentOrders() {
 async function placeOrder() {
   const item = document.getElementById('itemName').value.trim()
   const amt = document.getElementById('orderAmount').value
+  const category = document.getElementById('orderCategory').value
   if (!signer) { showStatus('placeStatus', 'Connect wallet first.', 'error'); return }
   if (!item || !amt) { showStatus('placeStatus', 'Fill in all fields.', 'error'); return }
   const placeBtn = document.getElementById('placeBtn')
@@ -347,37 +345,30 @@ async function placeOrder() {
     await approveTx.wait()
     showStatus('placeStatus', 'Placing order...', 'loading')
     const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, signer)
-    const tx = await agent.placeOrder(item, amount, receiver)
+    // Embed category in item name
+    const itemWithCategory = `[${category}] ${item}`
+    const tx = await agent.placeOrder(itemWithCategory, amount, receiver)
     await tx.wait()
     let newOrderId = null
-    try {
-      const updatedCount = await agent.orderCount()
-      newOrderId = Number(updatedCount)
-    } catch {}
+    try { const updatedCount = await agent.orderCount(); newOrderId = Number(updatedCount) } catch {}
     const placeStatusEl = document.getElementById('placeStatus')
     placeStatusEl.className = 'status success'
     placeStatusEl.style.display = 'block'
     let html = '<div><strong>✓ Order placed successfully.</strong></div>'
     if (newOrderId) {
-      html += `<div style="margin-top:6px;"><strong>Order ID:</strong> <span id="newOrderIdText">#${newOrderId}</span></div>`
+      html += `<div style="margin-top:6px;"><strong>Order ID:</strong> #${newOrderId}</div>`
       html += `<button id="copyOrderIdBtn" type="button" style="margin-top:8px;">Copy Order ID</button>`
     }
     html += `<div style="margin-top:6px;"><strong>Tx:</strong> ${tx.hash}</div>`
     placeStatusEl.innerHTML = html
     if (newOrderId) {
-      const copyBtn = document.getElementById('copyOrderIdBtn')
-      if (copyBtn) {
-        copyBtn.addEventListener('click', async () => {
-          try {
-            await navigator.clipboard.writeText(String(newOrderId))
-            copyBtn.textContent = 'Copied!'
-            setTimeout(() => { copyBtn.textContent = 'Copy Order ID' }, 1500)
-          } catch {
-            copyBtn.textContent = 'Copy failed'
-            setTimeout(() => { copyBtn.textContent = 'Copy Order ID' }, 1500)
-          }
-        })
-      }
+      document.getElementById('copyOrderIdBtn')?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(String(newOrderId))
+          document.getElementById('copyOrderIdBtn').textContent = 'Copied!'
+          setTimeout(() => { document.getElementById('copyOrderIdBtn').textContent = 'Copy Order ID' }, 1500)
+        } catch { document.getElementById('copyOrderIdBtn').textContent = 'Copy failed' }
+      })
       const lookupInput = document.getElementById('lookupId')
       const execInput = document.getElementById('execOrderId')
       const refundInput = document.getElementById('refundOrderId')
@@ -454,12 +445,13 @@ async function lookupOrder() {
     const amt = parseFloat(ethers.formatUnits(o.amount, 6)).toFixed(2)
     const date = new Date(Number(o.timestamp) * 1000).toLocaleString()
     const deadline = new Date(Number(o.deadline) * 1000).toLocaleString()
+    const category = getCategoryFromItem(o.item)
+    const itemName = cleanItemName(o.item)
     let status = '⏳ Pending'
     if (o.executed) status = '✓ Executed'
     if (o.refunded) status = '↩ Refunded'
-    showStatus(
-      'lookupStatus',
-      `ID: #${Number(o.id)}\nItem: ${o.item}\nBuyer: ${o.buyer}\nAmount: ${amt} USDC\nStatus: ${status}\nPlaced: ${date}\nDeadline: ${deadline}`,
+    showStatus('lookupStatus',
+      `ID: #${Number(o.id)}\nCategory: ${category}\nItem: ${itemName}\nBuyer: ${o.buyer}\nReceiver: ${o.receiver}\nAmount: ${amt} USDC\nStatus: ${status}\nPlaced: ${date}\nDeadline: ${deadline}`,
       'success'
     )
   } catch {
@@ -468,10 +460,7 @@ async function lookupOrder() {
 }
 
 function disconnectWallet() {
-  browserProvider = null
-  signer = null
-  rawProvider = null
-  connectedAddress = null
+  browserProvider = null; signer = null; rawProvider = null; connectedAddress = null
   walletBadge.style.display = 'none'
   connectBtn.style.display = 'block'
   document.getElementById('ordersList').innerHTML = "<div class='empty-state'>Connect wallet to view orders</div>"
