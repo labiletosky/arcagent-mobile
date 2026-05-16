@@ -63,7 +63,7 @@ defaultNetwork: arcTestnet,
 features: { analytics: false }
 })
 
-const categoryOptions = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join(’’)
+const categoryOptions = CATEGORIES.map(c => ‘<option value="' + c + '">’ + c + ‘</option>’).join(’’)
 
 document.querySelector(’#app’).innerHTML = `
 
@@ -89,7 +89,7 @@ document.querySelector(’#app’).innerHTML = `
           <div class="wallet-badge" id="walletBadge">
             <div class="dot"></div>
             <span id="walletAddr">Connected</span>
-            <span id="walletBalance" style="font-size:11px;opacity:0.8;background:rgba(255,255,255,0.15);padding:3px 8px;border-radius:6px;">— USDC</span>
+            <span id="walletBalance" style="font-size:11px;opacity:0.8;background:rgba(255,255,255,0.15);padding:3px 8px;border-radius:6px;">... USDC</span>
             <button id="disconnectBtn" class="mini-btn">Disconnect</button>
           </div>
           <button class="connect-btn" id="connectBtn">Connect Wallet</button>
