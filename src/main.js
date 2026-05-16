@@ -225,6 +225,7 @@ walletBadge.style.display = ‘flex’
 walletAddr.textContent = `${connectedAddress.slice(0, 6)}...${connectedAddress.slice(-4)}`
 connectBtn.style.display = ‘none’
 showStatus(‘placeStatus’, ‘Wallet connected successfully.’, ‘success’)
+await loadBalance()
 await loadStats()
 await loadRecentOrders()
 } catch (e) {
