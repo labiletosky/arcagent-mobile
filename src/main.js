@@ -1,6 +1,3 @@
-bash
-
-cat > /mnt/user-data/outputs/main.js << 'ENDOFFILE'
 import './style.css'
 import { ethers } from 'ethers'
 import { createAppKit } from '@reown/appkit'
@@ -10,7 +7,7 @@ const PROJECT_ID = '3f606d90e27edfdd5d9d6b7f3a469448'
 const AGENT_ADDR = '0x311C7939d6026707029A191DF77F1D56e9992807'
 const TOKEN_ADDR = '0x3600000000000000000000000000000000000000'
 const ARC_CHAIN_ID = 5042002
-const ARC_CHAIN_ID_HEX = '0x4CEF52'
+const ARC_CHAIN_ID_HEX = '0x4cef52'
 const ARC_RPC_URL = 'https://rpc.testnet.arc.network'
 const ARC_EXPLORER_URL = 'https://testnet.arcscan.app'
 const FAUCET_URL = 'https://faucet.circle.com'
@@ -583,8 +580,3 @@ async function init() {
   await loadRecentOrders()
 }
 init()
-ENDOFFILE
-echo "Done"
-Output
-
-Done
