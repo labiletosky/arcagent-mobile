@@ -332,6 +332,60 @@
         .nav-link:not(.primary) { display: none; }
         .flow-steps { grid-template-columns: 1fr; }
       }
+
+      .live-stats-section {
+        margin-bottom: 80px;
+        animation: fadeUp 0.8s ease 0.15s both;
+      }
+
+      .live-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1px;
+        background: var(--border2);
+        border: 1px solid var(--border2);
+        margin-bottom: 16px;
+      }
+
+      .live-stat {
+        background: var(--surface);
+        padding: 32px 24px;
+        text-align: center;
+        transition: background 0.2s;
+      }
+
+      .live-stat:hover { background: #0f1822; }
+
+      .live-stat-num {
+        font-family: 'DM Serif Display', serif;
+        font-size: 42px;
+        color: var(--accent);
+        line-height: 1;
+        margin-bottom: 10px;
+      }
+
+      .live-stat-label {
+        font-size: 10px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .live-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 1px;
+      }
+
+      @media (max-width: 640px) {
+        .live-stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .live-stat-num { font-size: 32px; }
+      }
+
     </style>
   </head>
   <body>
@@ -361,6 +415,33 @@
         <div class="hero-actions">
           <a href="./app.html" class="btn btn-gold">Launch App →</a>
           <a href="https://faucet.circle.com" target="_blank" class="btn btn-outline">Get Test USDC</a>
+        </div>
+      </section>
+
+
+      <!-- Live Stats -->
+      <section class="live-stats-section">
+        <div class="live-stats-grid">
+          <div class="live-stat">
+            <div class="live-stat-num" id="liveOrders">—</div>
+            <div class="live-stat-label">Orders Placed</div>
+          </div>
+          <div class="live-stat">
+            <div class="live-stat-num" id="liveExecuted">—</div>
+            <div class="live-stat-label">Executed</div>
+          </div>
+          <div class="live-stat">
+            <div class="live-stat-num" id="liveUsdc">—</div>
+            <div class="live-stat-label">USDC Settled</div>
+          </div>
+          <div class="live-stat">
+            <div class="live-stat-num" id="livePending">—</div>
+            <div class="live-stat-label">Pending</div>
+          </div>
+        </div>
+        <div class="live-badge">
+          <div class="live-dot"></div>
+          Live on Arc Testnet · Updates in real time
         </div>
       </section>
 
@@ -467,5 +548,27 @@
         </span>
       </footer>
     </div>
-  </body>
+  
+  <script>
+    async function loadLiveStats() {
+      try {
+        const res = await fetch('https://arcagent-api.vercel.app/orders')
+        const data = await res.json()
+        if (!data.success) return
+        const orders = data.orders || []
+        const total = orders.length
+        const executed = orders.filter(o => o.executed).length
+        const pending = orders.filter(o => !o.executed && !o.refunded).length
+        const usdc = orders.filter(o => o.executed).reduce((sum, o) => sum + parseFloat(o.amount || 0), 0)
+        document.getElementById('liveOrders').textContent = total
+        document.getElementById('liveExecuted').textContent = executed
+        document.getElementById('livePending').textContent = pending
+        document.getElementById('liveUsdc').textContent = usdc.toFixed(0) + ' USDC'
+      } catch(e) {
+        console.error('Stats error:', e)
+      }
+    }
+    loadLiveStats()
+  </script>
+</body>
 </html>
