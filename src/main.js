@@ -344,10 +344,13 @@ async function loadStats() {
     const readProvider = getReadProvider()
     const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, readProvider)
     const total = Number(await agent.orderCount())
-    let pending = 0, executed = 0
     const start = Math.max(1, total - 19)
-    for (let i = start; i <= total; i++) {
-      const o = await agent.getOrder(i)
+    // Fetch all orders in parallel instead of one by one
+    const ids = []
+    for (let i = start; i <= total; i++) ids.push(i)
+    const orders = await Promise.all(ids.map(i => agent.getOrder(i)))
+    let pending = 0, executed = 0
+    for (const o of orders) {
       if (o.executed) executed++
       else pending++
     }
@@ -364,12 +367,14 @@ async function loadRecentOrders() {
     const count = Number(await agent.orderCount())
     const list = document.getElementById('ordersList')
     if (count === 0) { list.innerHTML = '<div class="empty-state">No orders yet. Place one above.</div>'; return }
-    list.innerHTML = ''
+    list.innerHTML = '<div class="empty-state">Loading recent orders...</div>'
     const start = Math.max(1, count - 9)
-    for (let i = count; i >= start; i--) {
-      const o = await agent.getOrder(i)
-      list.innerHTML += renderOrderItem(o)
-    }
+    // Build all IDs descending
+    const ids = []
+    for (let i = count; i >= start; i--) ids.push(i)
+    // Fetch all in parallel
+    const orders = await Promise.all(ids.map(i => agent.getOrder(i)))
+    list.innerHTML = orders.map(o => renderOrderItem(o)).join('')
   } catch (e) {
     console.error('loadRecentOrders error:', e)
     document.getElementById('ordersList').innerHTML = '<div class="empty-state">Could not load orders.</div>'
@@ -388,26 +393,23 @@ async function loadMyOrders() {
     const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, readProvider)
     const count = Number(await agent.orderCount())
     if (count === 0) { list.innerHTML = '<div class="empty-state">No orders found for your wallet.</div>'; return }
-    const myOrders = []
-    for (let i = count; i >= 1; i--) {
-      const o = await agent.getOrder(i)
-      if (o.buyer.toLowerCase() === connectedAddress.toLowerCase() ||
-          o.receiver.toLowerCase() === connectedAddress.toLowerCase()) {
-        myOrders.push(o)
-      }
-    }
+    // Fetch ALL orders in parallel instead of one by one
+    const ids = []
+    for (let i = count; i >= 1; i--) ids.push(i)
+    const allOrders = await Promise.all(ids.map(i => agent.getOrder(i)))
+    const myOrders = allOrders.filter(o =>
+      o.buyer.toLowerCase() === connectedAddress.toLowerCase() ||
+      o.receiver.toLowerCase() === connectedAddress.toLowerCase()
+    )
     if (myOrders.length === 0) {
       list.innerHTML = '<div class="empty-state">No orders found for your wallet yet.</div>'
       return
     }
-    list.innerHTML = ''
+    list.innerHTML = myOrders.map(o => renderOrderItem(o)).join('')
     const info = document.getElementById('myOrdersInfo')
     if (info) {
       info.style.display = 'block'
       info.textContent = myOrders.length + ' order(s) found for ' + connectedAddress.slice(0, 6) + '...' + connectedAddress.slice(-4)
-    }
-    for (const o of myOrders) {
-      list.innerHTML += renderOrderItem(o)
     }
   } catch (e) {
     console.error('loadMyOrders error:', e)
@@ -576,7 +578,7 @@ function showStatus(id, msg, type) {
 }
 
 async function init() {
-  await loadStats()
-  await loadRecentOrders()
+  // Run both in parallel — no need to wait for stats before loading orders
+  await Promise.all([loadStats(), loadRecentOrders()])
 }
 init()
