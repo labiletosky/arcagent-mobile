@@ -393,27 +393,44 @@ async function loadMyOrders() {
     const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, readProvider)
     const count = Number(await agent.orderCount())
     if (count === 0) { list.innerHTML = '<div class="empty-state">No orders found for your wallet.</div>'; return }
-    // Fetch ALL orders in parallel instead of one by one
+
+    // Fetch in batches of 5 to avoid RPC rate limits
+    const BATCH = 5
     const ids = []
     for (let i = count; i >= 1; i--) ids.push(i)
-    const allOrders = await Promise.all(ids.map(i => agent.getOrder(i)))
-    const myOrders = allOrders.filter(o =>
-      o.buyer.toLowerCase() === connectedAddress.toLowerCase() ||
-      o.receiver.toLowerCase() === connectedAddress.toLowerCase()
-    )
-    if (myOrders.length === 0) {
-      list.innerHTML = '<div class="empty-state">No orders found for your wallet yet.</div>'
-      return
+    let myOrders = []
+    let loaded = false
+
+    for (let b = 0; b < ids.length; b += BATCH) {
+      const batch = ids.slice(b, b + BATCH)
+      // allSettled means one failed call won't kill the whole load
+      const results = await Promise.allSettled(batch.map(i => agent.getOrder(i)))
+      for (const r of results) {
+        if (r.status !== 'fulfilled') continue
+        const o = r.value
+        if (o.buyer.toLowerCase() === connectedAddress.toLowerCase() ||
+            o.receiver.toLowerCase() === connectedAddress.toLowerCase()) {
+          myOrders.push(o)
+        }
+      }
+      // Show orders as they arrive — don't wait for full scan
+      if (myOrders.length > 0) {
+        loaded = true
+        list.innerHTML = myOrders.map(o => renderOrderItem(o)).join('')
+        const info = document.getElementById('myOrdersInfo')
+        if (info) {
+          info.style.display = 'block'
+          info.textContent = myOrders.length + ' order(s) found for ' + connectedAddress.slice(0, 6) + '...' + connectedAddress.slice(-4)
+        }
+      }
     }
-    list.innerHTML = myOrders.map(o => renderOrderItem(o)).join('')
-    const info = document.getElementById('myOrdersInfo')
-    if (info) {
-      info.style.display = 'block'
-      info.textContent = myOrders.length + ' order(s) found for ' + connectedAddress.slice(0, 6) + '...' + connectedAddress.slice(-4)
+
+    if (!loaded) {
+      list.innerHTML = '<div class="empty-state">No orders found for your wallet yet.</div>'
     }
   } catch (e) {
     console.error('loadMyOrders error:', e)
-    list.innerHTML = '<div class="empty-state">Could not load your orders.</div>'
+    list.innerHTML = '<div class="empty-state">Could not load your orders. Check your connection and try again.</div>'
   }
 }
 
