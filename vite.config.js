@@ -1,13 +1,14 @@
 import { defineConfig } from 'vite'
-import { resolve } from 'node:path'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
-  build: {
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-        app: resolve(__dirname, 'app.html')
-      }
-    }
+  plugins: [
+    nodePolyfills({
+      include: ['util', 'stream', 'buffer', 'process', 'events'],
+      globals: { Buffer: true, process: true }
+    })
+  ],
+  optimizeDeps: {
+    include: ['@circle-fin/w3s-pw-web-sdk']
   }
 })

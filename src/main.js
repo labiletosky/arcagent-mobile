@@ -11,6 +11,8 @@ const ARC_CHAIN_ID_HEX = '0x4cef52'
 const ARC_RPC_URL = 'https://rpc.testnet.arc.network'
 const ARC_EXPLORER_URL = 'https://testnet.arcscan.app'
 const FAUCET_URL = 'https://faucet.circle.com'
+const CIRCLE_PROXY = 'https://arcagent-circle-proxy.arcagent.workers.dev/circle'
+const CIRCLE_APP_ID = 'c0cc626d-f95a-5257-9e4d-e55ef5831aa4'
 
 const CATEGORIES = ['Commerce', 'Freelance', 'API', 'Data', 'Content', 'Other']
 
@@ -90,6 +92,17 @@ document.querySelector('#app').innerHTML = `
             <button id="disconnectBtn" class="mini-btn">Disconnect</button>
           </div>
           <button class="connect-btn" id="connectBtn">Connect Wallet</button>
+          <div style="text-align:center;font-size:11px;color:#6b7280;margin:4px 0;">or</div>
+          <button class="connect-btn" id="circleBtn" style="background:linear-gradient(180deg,#1a73e8 0%,#1557b0 100%);">
+            ⊙ Connect with Circle
+          </button>
+          <div id="circleEmailWrap" style="display:none;margin-top:8px;">
+            <input id="circleEmail" type="email" placeholder="Enter your email" style="width:100%;padding:12px;border:1px solid #dbe4ee;border-radius:12px;font-size:14px;background:#f5f8fb;" />
+            <button class="connect-btn" id="circleSubmitBtn" style="margin-top:8px;background:linear-gradient(180deg,#1a73e8 0%,#1557b0 100%);">
+              Create / Restore Wallet →
+            </button>
+          </div>
+          <div id="circleStatus" class="status" style="display:none;margin-top:8px;"></div>
         </div>
       </div>
     </header>
@@ -211,6 +224,14 @@ document.querySelector('#app').innerHTML = `
       </div>
     </div>
 
+    <!-- Circle PIN iframe modal -->
+    <div id="circleModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:20px;width:420px;max-width:95vw;height:600px;max-height:90vh;overflow:hidden;position:relative;">
+        <button onclick="document.getElementById('circleModal').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;z-index:1;">✕</button>
+        <iframe id="circleIframe" src="" style="width:100%;height:100%;border:none;border-radius:20px;"></iframe>
+      </div>
+    </div>
+
   </div>
 `
 
@@ -218,11 +239,17 @@ let browserProvider = null
 let signer = null
 let rawProvider = null
 let connectedAddress = null
+let circleUserToken = null
+let circleWalletAddress = null
+let circleWalletId = null
 
 const connectBtn = document.getElementById('connectBtn')
 const disconnectBtn = document.getElementById('disconnectBtn')
 const walletBadge = document.getElementById('walletBadge')
 const walletAddr = document.getElementById('walletAddr')
+const circleBtn = document.getElementById('circleBtn')
+const circleEmailWrap = document.getElementById('circleEmailWrap')
+const circleSubmitBtn = document.getElementById('circleSubmitBtn')
 
 connectBtn.addEventListener('click', connectWallet)
 disconnectBtn.addEventListener('click', disconnectWallet)
@@ -230,6 +257,93 @@ document.getElementById('placeBtn').addEventListener('click', placeOrder)
 document.getElementById('execBtn').addEventListener('click', executeOrder)
 document.getElementById('refundBtn').addEventListener('click', claimRefund)
 document.getElementById('lookupBtn').addEventListener('click', lookupOrder)
+
+// ── Circle button logic ──────────────────────────────────────
+circleBtn.addEventListener('click', () => {
+  circleEmailWrap.style.display = circleEmailWrap.style.display === 'none' ? 'block' : 'none'
+})
+
+circleSubmitBtn.addEventListener('click', async () => {
+  const email = document.getElementById('circleEmail').value.trim()
+  if (!email) { showCircleStatus('Enter your email first.', 'error'); return }
+  circleSubmitBtn.disabled = true
+  await connectCircleWallet(email)
+  circleSubmitBtn.disabled = false
+})
+
+function showCircleStatus(msg, type) {
+  const el = document.getElementById('circleStatus')
+  el.textContent = msg
+  el.className = 'status ' + type
+  el.style.display = 'block'
+}
+
+async function connectCircleWallet(email) {
+  try {
+    showCircleStatus('Creating your wallet...', 'loading')
+
+    // Single call — server creates wallet instantly, no PIN needed
+    const res = await fetch(`${CIRCLE_PROXY}/wallet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: email })
+    })
+    const data = await res.json()
+
+    if (!data?.address) {
+      throw new Error(data?.error || 'Could not create wallet — is your proxy server running?')
+    }
+
+    circleWalletAddress = data.address
+    circleWalletId = data.walletId
+    onCircleConnected(circleWalletAddress)
+
+  } catch (e) {
+    console.error('[Circle]', e)
+    showCircleStatus('❌ ' + e.message, 'error')
+  }
+}
+
+function onCircleConnected(address) {
+  connectedAddress = address
+  walletBadge.style.display = 'flex'
+  walletAddr.textContent = address.slice(0, 6) + '...' + address.slice(-4) + ' (Circle)'
+  connectBtn.style.display = 'none'
+  circleBtn.style.display = 'none'
+  circleEmailWrap.style.display = 'none'
+  showCircleStatus('✅ Circle wallet connected!', 'success')
+  loadMyOrders()
+}
+
+
+// ── Circle transaction helper ─────────────────────────────────
+async function circleSignAndSend(contractAddress, callData, value) {
+  if (!circleWalletId) throw new Error('No Circle wallet connected')
+  
+  showStatus('placeStatus', 'Sending via Circle wallet...', 'loading')
+  
+  const res = await fetch(`${CIRCLE_PROXY}/transaction`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ walletId: circleWalletId, contractAddress, callData, value })
+  })
+  const data = await res.json()
+  if (!data.success) throw new Error(data.error || 'Transaction failed')
+  
+  // Poll for completion
+  let attempts = 0
+  while (attempts < 30) {
+    await new Promise(r => setTimeout(r, 2000))
+    const pollRes = await fetch(`${CIRCLE_PROXY}/transaction/${data.txId}`)
+    const pollData = await pollRes.json()
+    const state = pollData?.data?.state
+    console.log('[Circle] TX state:', state)
+    if (state === 'COMPLETE') return { hash: pollData?.data?.txHash }
+    if (state === 'FAILED' || state === 'CANCELLED') throw new Error('Transaction failed onchain')
+    attempts++
+  }
+  throw new Error('Transaction timed out')
+}
 
 function switchTab(tab) {
   document.getElementById('tabContentAll').style.display = tab === 'all' ? 'block' : 'none'
@@ -256,6 +370,8 @@ async function connectWallet() {
     walletBadge.style.display = 'flex'
     walletAddr.textContent = connectedAddress.slice(0, 6) + '...' + connectedAddress.slice(-4)
     connectBtn.style.display = 'none'
+    circleBtn.style.display = 'none'
+    circleEmailWrap.style.display = 'none'
     showStatus('placeStatus', 'Wallet connected successfully.', 'success')
     await loadBalance()
     await loadStats()
@@ -345,7 +461,6 @@ async function loadStats() {
     const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, readProvider)
     const total = Number(await agent.orderCount())
     const start = Math.max(1, total - 19)
-    // Fetch all orders in parallel instead of one by one
     const ids = []
     for (let i = start; i <= total; i++) ids.push(i)
     const orders = await Promise.all(ids.map(i => agent.getOrder(i)))
@@ -369,10 +484,8 @@ async function loadRecentOrders() {
     if (count === 0) { list.innerHTML = '<div class="empty-state">No orders yet. Place one above.</div>'; return }
     list.innerHTML = '<div class="empty-state">Loading recent orders...</div>'
     const start = Math.max(1, count - 9)
-    // Build all IDs descending
     const ids = []
     for (let i = count; i >= start; i--) ids.push(i)
-    // Fetch all in parallel
     const orders = await Promise.all(ids.map(i => agent.getOrder(i)))
     list.innerHTML = orders.map(o => renderOrderItem(o)).join('')
   } catch (e) {
@@ -393,17 +506,13 @@ async function loadMyOrders() {
     const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, readProvider)
     const count = Number(await agent.orderCount())
     if (count === 0) { list.innerHTML = '<div class="empty-state">No orders found for your wallet.</div>'; return }
-
-    // Fetch in batches of 5 to avoid RPC rate limits
     const BATCH = 5
     const ids = []
     for (let i = count; i >= 1; i--) ids.push(i)
     let myOrders = []
     let loaded = false
-
     for (let b = 0; b < ids.length; b += BATCH) {
       const batch = ids.slice(b, b + BATCH)
-      // allSettled means one failed call won't kill the whole load
       const results = await Promise.allSettled(batch.map(i => agent.getOrder(i)))
       for (const r of results) {
         if (r.status !== 'fulfilled') continue
@@ -413,7 +522,6 @@ async function loadMyOrders() {
           myOrders.push(o)
         }
       }
-      // Show orders as they arrive — don't wait for full scan
       if (myOrders.length > 0) {
         loaded = true
         list.innerHTML = myOrders.map(o => renderOrderItem(o)).join('')
@@ -424,7 +532,6 @@ async function loadMyOrders() {
         }
       }
     }
-
     if (!loaded) {
       list.innerHTML = '<div class="empty-state">No orders found for your wallet yet.</div>'
     }
@@ -438,7 +545,7 @@ async function placeOrder() {
   const item = document.getElementById('itemName').value.trim()
   const amt = document.getElementById('orderAmount').value
   const category = document.getElementById('orderCategory').value
-  if (!signer) { showStatus('placeStatus', 'Connect wallet first.', 'error'); return }
+  if (!signer && !circleWalletId) { showStatus('placeStatus', 'Connect wallet first.', 'error'); return }
   if (!item || !amt) { showStatus('placeStatus', 'Fill in all fields.', 'error'); return }
   const placeBtn = document.getElementById('placeBtn')
   placeBtn.disabled = true
@@ -449,14 +556,34 @@ async function placeOrder() {
     const receiver = document.getElementById('receiverAddr').value.trim()
     if (!receiver || !receiver.startsWith('0x')) throw new Error('Enter a valid receiver address.')
     const amount = ethers.parseUnits(String(parsed), 6)
-    const token = new ethers.Contract(TOKEN_ADDR, TOKEN_ABI, signer)
-    const approveTx = await token.approve(AGENT_ADDR, amount)
-    await approveTx.wait()
-    showStatus('placeStatus', 'Placing order...', 'loading')
-    const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, signer)
     const itemWithCategory = '[' + category + '] ' + item
-    const tx = await agent.placeOrder(itemWithCategory, amount, receiver)
-    await tx.wait()
+
+    let tx
+
+    if (circleWalletId) {
+      // ── Circle wallet path ──
+      // Step 1: Approve USDC
+      showStatus('placeStatus', 'Approving USDC via Circle...', 'loading')
+      const tokenIface = new ethers.Interface(TOKEN_ABI)
+      const approveData = tokenIface.encodeFunctionData('approve', [AGENT_ADDR, amount])
+      await circleSignAndSend(TOKEN_ADDR, approveData)
+
+      // Step 2: Place order
+      showStatus('placeStatus', 'Placing order via Circle...', 'loading')
+      const agentIface = new ethers.Interface(AGENT_ABI)
+      const placeData = agentIface.encodeFunctionData('placeOrder', [itemWithCategory, amount, receiver])
+      tx = await circleSignAndSend(AGENT_ADDR, placeData)
+
+    } else {
+      // ── MetaMask path ──
+      const token = new ethers.Contract(TOKEN_ADDR, TOKEN_ABI, signer)
+      const approveTx = await token.approve(AGENT_ADDR, amount)
+      await approveTx.wait()
+      showStatus('placeStatus', 'Placing order...', 'loading')
+      const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, signer)
+      tx = await agent.placeOrder(itemWithCategory, amount, receiver)
+      await tx.wait()
+    }
     let newOrderId = null
     try { const updatedCount = await agent.orderCount(); newOrderId = Number(updatedCount) } catch {}
     const placeStatusEl = document.getElementById('placeStatus')
@@ -575,8 +702,10 @@ async function lookupOrder() {
 
 function disconnectWallet() {
   browserProvider = null; signer = null; rawProvider = null; connectedAddress = null
+  circleUserToken = null; circleWalletAddress = null
   walletBadge.style.display = 'none'
   connectBtn.style.display = 'block'
+  circleBtn.style.display = 'block'
   document.getElementById('ordersList').innerHTML = '<div class="empty-state">Connect wallet to view orders</div>'
   document.getElementById('myOrdersList').innerHTML = '<div class="empty-state">Connect wallet to see your orders.</div>'
   document.getElementById('statOrders').textContent = '—'
@@ -584,6 +713,7 @@ function disconnectWallet() {
   document.getElementById('statExecuted').textContent = '—'
   var info = document.getElementById('myOrdersInfo')
   if (info) info.style.display = 'none'
+  document.getElementById('circleStatus').style.display = 'none'
 }
 
 function showStatus(id, msg, type) {
@@ -595,7 +725,6 @@ function showStatus(id, msg, type) {
 }
 
 async function init() {
-  // Run both in parallel — no need to wait for stats before loading orders
   await Promise.all([loadStats(), loadRecentOrders()])
 }
 init()
