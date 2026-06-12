@@ -304,7 +304,7 @@ async function connectCircleWallet(email) {
   }
 }
 
-function onCircleConnected(address) {
+async function onCircleConnected(address) {
   connectedAddress = address
   walletBadge.style.display = 'flex'
   walletAddr.textContent = address.slice(0, 6) + '...' + address.slice(-4) + ' (Circle)'
