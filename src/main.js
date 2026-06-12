@@ -308,10 +308,43 @@ function onCircleConnected(address) {
   connectedAddress = address
   walletBadge.style.display = 'flex'
   walletAddr.textContent = address.slice(0, 6) + '...' + address.slice(-4) + ' (Circle)'
+  walletAddr.title = address
+  walletAddr.style.cursor = 'pointer'
+  walletAddr.onclick = () => {
+    navigator.clipboard.writeText(address)
+    walletAddr.textContent = 'Copied!'
+    setTimeout(() => {
+      walletAddr.textContent = address.slice(0, 6) + '...' + address.slice(-4) + ' (Circle)'
+    }, 1500)
+  }
   connectBtn.style.display = 'none'
   circleBtn.style.display = 'none'
   circleEmailWrap.style.display = 'none'
-  showCircleStatus('✅ Circle wallet connected!', 'success')
+  showCircleStatus('✅ Circle wallet connected! Tap address to copy.', 'success')
+
+  // Show onboarding box for new users
+  let onboardBox = document.getElementById('circleOnboard')
+  if (!onboardBox) {
+    onboardBox = document.createElement('div')
+    onboardBox.id = 'circleOnboard'
+    onboardBox.style.cssText = 'margin-top:10px;background:#fff8e8;border:1px solid #f0d080;border-radius:12px;padding:12px;font-size:12px;color:#8b6b19;line-height:1.7;'
+    onboardBox.innerHTML = `
+      <strong>🪙 Need test USDC?</strong><br>
+      Your wallet address: <span id='fullAddrDisplay' style='font-family:monospace;font-size:11px;word-break:break-all;'>${address}</span><br>
+      <div style='display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;'>
+        <button onclick="navigator.clipboard.writeText('${address}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='📋 Copy Address',1500)" 
+          style='background:#f0b429;border:none;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;'>
+          📋 Copy Address
+        </button>
+        <a href='https://faucet.circle.com' target='_blank' 
+          style='background:#4f6b86;color:#fff;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;'>
+          💧 Get Free USDC →
+        </a>
+      </div>
+    `
+    document.getElementById('circleStatus').after(onboardBox)
+  }
+
   loadMyOrders()
 }
 
