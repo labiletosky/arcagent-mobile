@@ -321,6 +321,7 @@ function onCircleConnected(address) {
   circleBtn.style.display = 'none'
   circleEmailWrap.style.display = 'none'
   showCircleStatus('✅ Circle wallet connected! Tap address to copy.', 'success')
+  await Promise.all([loadStats(), loadRecentOrders()])
 
   // Show onboarding box for new users
   let onboardBox = document.getElementById('circleOnboard')
