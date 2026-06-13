@@ -491,21 +491,14 @@ function renderOrderItem(o) {
 
 async function loadStats() {
   try {
-    const readProvider = getReadProvider()
-    const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, readProvider)
-    const total = Number(await agent.orderCount())
-    const start = Math.max(1, total - 19)
-    const ids = []
-    for (let i = start; i <= total; i++) ids.push(i)
-    const orders = await Promise.all(ids.map(i => agent.getOrder(i)))
-    let pending = 0, executed = 0
-    for (const o of orders) {
-      if (o.executed) executed++
-      else pending++
+    // Fetch from API for accurate stats across all orders
+    const res = await fetch('https://arcagent-api.vercel.app/stats')
+    const data = await res.json()
+    if (data.success) {
+      document.getElementById('statOrders').textContent = data.total
+      document.getElementById('statPending').textContent = data.pending
+      document.getElementById('statExecuted').textContent = data.executed
     }
-    document.getElementById('statOrders').textContent = total
-    document.getElementById('statPending').textContent = pending
-    document.getElementById('statExecuted').textContent = executed
   } catch (e) { console.error('loadStats error:', e) }
 }
 
