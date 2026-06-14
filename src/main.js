@@ -97,20 +97,11 @@ document.querySelector('#app').innerHTML = `
             ⊙ Connect with Circle
           </button>
           <div id="circleEmailWrap" style="display:none;margin-top:8px;">
-            <div id="circleStepEmail">
-              <input id="circleEmail" type="email" placeholder="Enter your email" style="width:100%;padding:12px;border:1px solid #dbe4ee;border-radius:12px;font-size:14px;background:#f5f8fb;" />
-              <button class="connect-btn" id="circleSubmitBtn" style="margin-top:8px;background:linear-gradient(180deg,#1a73e8 0%,#1557b0 100%);">
-                Send Verification Code →
-              </button>
-            </div>
-            <div id="circleStepOTP" style="display:none;">
-              <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Enter the 6-digit code sent to your email</div>
-              <input id="circleOTP" type="text" maxlength="6" placeholder="000000" style="width:100%;padding:12px;border:1px solid #dbe4ee;border-radius:12px;font-size:20px;background:#f5f8fb;text-align:center;letter-spacing:8px;" />
-              <button class="connect-btn" id="circleVerifyBtn" style="margin-top:8px;background:linear-gradient(180deg,#1a73e8 0%,#1557b0 100%);">
-                Verify & Connect Wallet →
-              </button>
-              <div style="font-size:11px;color:#6b7280;margin-top:6px;text-align:center;cursor:pointer;" id="circleResendBtn">Resend code</div>
-            </div>
+            <input id="circleEmail" type="email" placeholder="Enter your email" style="width:100%;padding:12px;border:1px solid #dbe4ee;border-radius:12px;font-size:14px;background:#f5f8fb;" />
+            <button class="connect-btn" id="circleSubmitBtn" style="margin-top:8px;background:linear-gradient(180deg,#1a73e8 0%,#1557b0 100%);">
+              Create / Connect Wallet →
+            </button>
+            <div style="font-size:11px;color:#6b7280;margin-top:6px;text-align:center;">🔒 Email OTP verification coming on mainnet</div>
           </div>
           <div id="circleStatus" class="status" style="display:none;margin-top:8px;"></div>
         </div>
@@ -277,65 +268,22 @@ circleSubmitBtn.addEventListener('click', async () => {
   const email = document.getElementById('circleEmail').value.trim()
   if (!email) { showCircleStatus('Enter your email first.', 'error'); return }
   circleSubmitBtn.disabled = true
-  showCircleStatus('Sending verification code...', 'loading')
+  showCircleStatus('Creating your wallet...', 'loading')
   try {
-    const res = await fetch(`${CIRCLE_PROXY}/send-otp`, {
+    const res = await fetch(`${CIRCLE_PROXY}/wallet`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
     })
     const data = await res.json()
-    if (!data.success) throw new Error(data.error || 'Failed to send code')
-    showCircleStatus('✅ Code sent! Check your email.', 'success')
-    document.getElementById('circleStepEmail').style.display = 'none'
-    document.getElementById('circleStepOTP').style.display = 'block'
-  } catch (e) {
-    showCircleStatus('❌ ' + e.message, 'error')
-  }
-  circleSubmitBtn.disabled = false
-})
-
-// Verify OTP
-document.getElementById('circleVerifyBtn').addEventListener('click', async () => {
-  const email = document.getElementById('circleEmail').value.trim()
-  const otp = document.getElementById('circleOTP').value.trim()
-  if (!otp || otp.length !== 6) { showCircleStatus('Enter the 6-digit code.', 'error'); return }
-  const btn = document.getElementById('circleVerifyBtn')
-  btn.disabled = true
-  showCircleStatus('Verifying code...', 'loading')
-  try {
-    const res = await fetch(`${CIRCLE_PROXY}/verify-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp })
-    })
-    const data = await res.json()
-    if (!data.success) throw new Error(data.error || 'Invalid code')
+    if (!data.success) throw new Error(data.error || 'Could not create wallet')
     circleWalletAddress = data.address
     circleWalletId = data.walletId
     await onCircleConnected(circleWalletAddress)
   } catch (e) {
     showCircleStatus('❌ ' + e.message, 'error')
   }
-  btn.disabled = false
-})
-
-// Resend OTP
-document.getElementById('circleResendBtn').addEventListener('click', async () => {
-  const email = document.getElementById('circleEmail').value.trim()
-  if (!email) return
-  showCircleStatus('Resending code...', 'loading')
-  try {
-    const res = await fetch(`${CIRCLE_PROXY}/send-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    })
-    const data = await res.json()
-    if (data.success) showCircleStatus('✅ New code sent!', 'success')
-  } catch (e) {
-    showCircleStatus('❌ Failed to resend', 'error')
-  }
+  circleSubmitBtn.disabled = false
 })
 
 function showCircleStatus(msg, type) {
