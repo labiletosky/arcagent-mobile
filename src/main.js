@@ -227,6 +227,19 @@ document.querySelector('#app').innerHTML = `
           <button class="action-btn neutral" id="lookupBtn">Fetch Order</button>
           <div class="status" id="lookupStatus"></div>
         </div>
+
+        <div class="card">
+          <div class="card-title"><span>⬡ Arc Memo Lookup</span></div>
+          <div class="field">
+            <label>Transaction Hash</label>
+            <input type="text" id="memoTxHash" placeholder="0x..." />
+          </div>
+          <div class="help-box notice-box">
+            <p class="helper-text notice-text">Decode the onchain order metadata attached via Arc's native Memo contract.</p>
+          </div>
+          <button class="action-btn neutral" id="memoLookupBtn">Decode Memo</button>
+          <div class="status" id="memoLookupStatus"></div>
+        </div>
       </div>
     </div>
 
@@ -263,6 +276,7 @@ document.getElementById('placeBtn').addEventListener('click', placeOrder)
 document.getElementById('execBtn').addEventListener('click', executeOrder)
 document.getElementById('refundBtn').addEventListener('click', claimRefund)
 document.getElementById('lookupBtn').addEventListener('click', lookupOrder)
+document.getElementById('memoLookupBtn').addEventListener('click', lookupMemo)
 
 // ── Circle button logic ──────────────────────────────────────
 circleBtn.addEventListener('click', () => {
@@ -737,6 +751,54 @@ async function lookupOrder() {
     )
   } catch (e) {
     showStatus('lookupStatus', 'Order not found.', 'error')
+  }
+}
+
+async function lookupMemo() {
+  const txHash = document.getElementById('memoTxHash').value.trim()
+  if (!txHash || !txHash.startsWith('0x')) {
+    showStatus('memoLookupStatus', 'Enter a valid transaction hash.', 'error')
+    return
+  }
+  showStatus('memoLookupStatus', 'Fetching transaction receipt...', 'loading')
+  try {
+    const readProvider = getReadProvider()
+    const receipt = await readProvider.getTransactionReceipt(txHash)
+    if (!receipt) throw new Error('Transaction not found')
+
+    // Memo event signature: Memo(address,address,bytes32,bytes32,bytes,uint256)
+    const memoIface = new ethers.Interface([
+      'event Memo(address indexed sender, address indexed target, bytes32 callDataHash, bytes32 indexed memoId, bytes memo, uint256 memoIndex)'
+    ])
+
+    let found = false
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() !== MEMO_ADDR.toLowerCase()) continue
+      try {
+        const parsed = memoIface.parseLog(log)
+        const memoBytes = parsed.args.memo
+        const memoText = ethers.toUtf8String(memoBytes)
+        let memoJson
+        try { memoJson = JSON.parse(memoText) } catch { memoJson = { raw: memoText } }
+
+        found = true
+        showStatus('memoLookupStatus',
+          '✅ Memo decoded successfully\n\n' +
+          'Sender: ' + parsed.args.sender + '\n' +
+          'Target: ' + parsed.args.target + '\n' +
+          'Memo ID: ' + parsed.args.memoId + '\n' +
+          'Memo Index: ' + parsed.args.memoIndex.toString() + '\n\n' +
+          'Decoded Order Data:\n' + JSON.stringify(memoJson, null, 2),
+          'success'
+        )
+      } catch (e) { continue }
+    }
+
+    if (!found) {
+      showStatus('memoLookupStatus', 'No Memo event found in this transaction. Make sure this was an order placed after the Memo integration.', 'error')
+    }
+  } catch (e) {
+    showStatus('memoLookupStatus', 'Error: ' + (e?.message || e), 'error')
   }
 }
 
