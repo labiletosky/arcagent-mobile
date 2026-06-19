@@ -5,6 +5,7 @@ import { EthersAdapter } from '@reown/appkit-adapter-ethers'
 
 const PROJECT_ID = '3f606d90e27edfdd5d9d6b7f3a469448'
 const AGENT_ADDR = '0x311C7939d6026707029A191DF77F1D56e9992807'
+const MEMO_ADDR = '0x5294E9927c3306DcBaDb03fe70b92e01cCede505' // Arc predeployed Memo contract
 const TOKEN_ADDR = '0x3600000000000000000000000000000000000000'
 const ARC_CHAIN_ID = 5042002
 const ARC_CHAIN_ID_HEX = '0x4cef52'
@@ -32,6 +33,10 @@ const AGENT_ABI = [
   'function getOrder(uint256 orderId) view returns (tuple(uint256 id, address buyer, address receiver, string item, uint256 amount, bool executed, bool refunded, uint256 timestamp, uint256 deadline))',
   'function orderCount() view returns (uint256)',
   'function getTimeRemaining(uint256 orderId) view returns (uint256)'
+]
+
+const MEMO_ABI = [
+  'function memo(address target, bytes calldata data, bytes32 memoId, bytes calldata memoData) external'
 ]
 
 const TOKEN_ABI = [
@@ -590,16 +595,33 @@ async function placeOrder() {
       showStatus('placeStatus', 'Placing order via Circle...', 'loading')
       const agentIface = new ethers.Interface(AGENT_ABI)
       const placeData = agentIface.encodeFunctionData('placeOrder', [itemWithCategory, amount, receiver])
-      tx = await circleSignAndSend(AGENT_ADDR, placeData)
+
+      // Wrap through Arc's Memo contract for onchain order metadata
+      const memoIface = new ethers.Interface(MEMO_ABI)
+      const memoId = ethers.keccak256(ethers.toUtf8Bytes('arcagent-order-' + Date.now()))
+      const memoData = ethers.toUtf8Bytes(JSON.stringify({ item: itemWithCategory, amount: parsed, receiver }))
+      const memoCallData = memoIface.encodeFunctionData('memo', [AGENT_ADDR, placeData, memoId, memoData])
+
+      tx = await circleSignAndSend(MEMO_ADDR, memoCallData)
 
     } else {
       // ── MetaMask path ──
       const token = new ethers.Contract(TOKEN_ADDR, TOKEN_ABI, signer)
       const approveTx = await token.approve(AGENT_ADDR, amount)
       await approveTx.wait()
-      showStatus('placeStatus', 'Placing order...', 'loading')
-      const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, signer)
-      tx = await agent.placeOrder(itemWithCategory, amount, receiver)
+      showStatus('placeStatus', 'Placing order via Arc Memo...', 'loading')
+
+      // Wrap placeOrder through Arc's native Memo contract
+      // This attaches the order metadata directly to the onchain transaction
+      // so indexers/explorers can reconcile it without touching our contract
+      const agentIfaceLocal = new ethers.Interface(AGENT_ABI)
+      const placeCallData = agentIfaceLocal.encodeFunctionData('placeOrder', [itemWithCategory, amount, receiver])
+
+      const memo = new ethers.Contract(MEMO_ADDR, MEMO_ABI, signer)
+      const memoId = ethers.keccak256(ethers.toUtf8Bytes('arcagent-order-' + Date.now()))
+      const memoData = ethers.toUtf8Bytes(JSON.stringify({ item: itemWithCategory, amount: parsed, receiver }))
+
+      tx = await memo.memo(AGENT_ADDR, placeCallData, memoId, memoData)
       await tx.wait()
     }
     let newOrderId = null
