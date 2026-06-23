@@ -456,8 +456,8 @@
       <div class="flow-step">
         <div class="flow-icon">🔗</div>
         <div class="flow-num">01</div>
-        <div class="flow-title">Connect Wallet</div>
-        <div class="flow-desc">Connect Rabby or MetaMask. Switch to Arc Testnet automatically.</div>
+        <div class="flow-title">Connect</div>
+        <div class="flow-desc">Just your email via Circle (no extension needed), or connect MetaMask / Rabby directly.</div>
       </div>
       <div class="flow-step">
         <div class="flow-icon">📦</div>
@@ -510,8 +510,8 @@
       </div>
       <div class="feature">
         <div class="feature-icon">🌐</div>
-        <div class="feature-title">Public API</div>
-        <div class="feature-desc">Query orders, balances, and stats programmatically. Open infrastructure anyone can build on.</div>
+        <div class="feature-title">x402 for AI Agents</div>
+        <div class="feature-desc">AI agents pay per request in USDC via Circle Gateway, no API keys, no signup. HTTP 402 in, data out.</div>
       </div>
     </div>
   </section>
@@ -569,10 +569,13 @@
         document.getElementById('livePending').textContent = data.pending
         document.getElementById('liveUsdc').textContent = data.totalUsdc + ' USDC'
       } catch(e) {
-        document.getElementById('liveOrders').textContent = '234+'
-        document.getElementById('liveExecuted').textContent = '100+'
-        document.getElementById('livePending').textContent = '134+'
-        document.getElementById('liveUsdc').textContent = '500+ USDC'
+        // Fallback only — shown if the live /stats call fails or times out.
+        // Snapshot taken 2026-06-23 via curl https://arcagent-api.vercel.app/stats
+        // Update this snapshot periodically — it will drift as real orders come in.
+        document.getElementById('liveOrders').textContent = '473+'
+        document.getElementById('liveExecuted').textContent = '471+'
+        document.getElementById('livePending').textContent = '2+'
+        document.getElementById('liveUsdc').textContent = '2,104+ USDC'
         console.error('Stats error:', e)
       }
     }
