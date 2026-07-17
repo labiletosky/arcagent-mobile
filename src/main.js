@@ -460,8 +460,14 @@ async function ensureArcNetwork(provider) {
   }
 }
 
+// staticNetwork stops ethers from calling eth_chainId before every
+// single request — that hidden extra call was doubling our actual
+// load on Arc's rate-limited public testnet RPC, which is what
+// caused orders to stop loading. Arc Testnet chain ID confirmed as
+// 5042002 via direct RPC call.
 function getReadProvider() {
-  return browserProvider || new ethers.JsonRpcProvider(ARC_RPC_URL)
+  if (browserProvider) return browserProvider
+  return new ethers.JsonRpcProvider(ARC_RPC_URL, ARC_CHAIN_ID, { staticNetwork: true })
 }
 
 function getCategoryFromItem(item) {
