@@ -529,7 +529,28 @@ async function loadRecentOrders() {
     const start = Math.max(1, count - 9)
     const ids = []
     for (let i = count; i >= start; i--) ids.push(i)
-    const orders = await Promise.all(ids.map(i => agent.getOrder(i)))
+
+    // Arc's public testnet RPC appears to rate-limit concurrent
+    // requests, not just total volume — even 10 simultaneous calls
+    // were failing with "missing revert data" on 2026-07-17. Staggering
+    // each call by 150ms fixes this at the cost of a slightly slower
+    // load (roughly 1.5s for 10 orders instead of instant), which is
+    // an acceptable tradeoff for actually working.
+    const orders = []
+    for (const id of ids) {
+      try {
+        const o = await agent.getOrder(id)
+        orders.push(o)
+      } catch (e) {
+        console.error(`Could not load order #${id}, skipping:`, e.message)
+      }
+      await new Promise(r => setTimeout(r, 150))
+    }
+
+    if (orders.length === 0) {
+      list.innerHTML = '<div class="empty-state">Could not load orders right now. Try refreshing in a moment.</div>'
+      return
+    }
     list.innerHTML = orders.map(o => renderOrderItem(o)).join('')
   } catch (e) {
     console.error('loadRecentOrders error:', e)
@@ -549,16 +570,28 @@ async function loadMyOrders() {
     const agent = new ethers.Contract(AGENT_ADDR, AGENT_ABI, readProvider)
     const count = Number(await agent.orderCount())
     if (count === 0) { list.innerHTML = '<div class="empty-state">No orders found for your wallet.</div>'; return }
-    const BATCH = 5
+
+    // This function previously scanned ALL orders with zero delay
+    // between batches of 5 — with 500 orders that's 100 rapid-fire
+    // bursts back to back, which reliably tripped Arc's public RPC
+    // rate limit (confirmed 2026-07-17). Reduced batch size to 3 and
+    // added a real delay between batches. This makes a full scan
+    // noticeably slower for a wallet with no orders near the top of
+    // the list, a real tradeoff for actually completing instead of
+    // failing outright.
+    const BATCH = 3
+    const BATCH_DELAY_MS = 200
     const ids = []
     for (let i = count; i >= 1; i--) ids.push(i)
     let myOrders = []
     let loaded = false
+    let failedCount = 0
+
     for (let b = 0; b < ids.length; b += BATCH) {
       const batch = ids.slice(b, b + BATCH)
       const results = await Promise.allSettled(batch.map(i => agent.getOrder(i)))
       for (const r of results) {
-        if (r.status !== 'fulfilled') continue
+        if (r.status !== 'fulfilled') { failedCount++; continue }
         const o = r.value
         if (o.buyer.toLowerCase() === connectedAddress.toLowerCase() ||
             o.receiver.toLowerCase() === connectedAddress.toLowerCase()) {
@@ -574,7 +607,13 @@ async function loadMyOrders() {
           info.textContent = myOrders.length + ' order(s) found for ' + connectedAddress.slice(0, 6) + '...' + connectedAddress.slice(-4)
         }
       }
+      if (b + BATCH < ids.length) await new Promise(r => setTimeout(r, BATCH_DELAY_MS))
     }
+
+    if (failedCount > 0) {
+      console.error(`loadMyOrders: ${failedCount} order(s) could not be fetched due to RPC errors — results may be incomplete.`)
+    }
+
     if (!loaded) {
       list.innerHTML = '<div class="empty-state">No orders found for your wallet yet.</div>'
     }
@@ -644,8 +683,21 @@ async function placeOrder() {
       tx = await memo.memo(AGENT_ADDR, placeCallData, memoId, memoData)
       await tx.wait()
     }
+    // BUG FOUND during audit: this previously referenced an undefined
+    // 'agent' variable (never declared in this function's scope),
+    // which silently failed every time due to the empty catch block —
+    // newOrderId always stayed null, so the success message never
+    // showed the actual order ID or copy button. Fixed by creating
+    // a proper read-only contract instance here.
     let newOrderId = null
-    try { const updatedCount = await agent.orderCount(); newOrderId = Number(updatedCount) } catch {}
+    try {
+      const readProviderForCount = getReadProvider()
+      const agentForCount = new ethers.Contract(AGENT_ADDR, AGENT_ABI, readProviderForCount)
+      const updatedCount = await agentForCount.orderCount()
+      newOrderId = Number(updatedCount)
+    } catch (e) {
+      console.error('Could not fetch new order ID:', e.message)
+    }
     const placeStatusEl = document.getElementById('placeStatus')
     placeStatusEl.className = 'status success'
     placeStatusEl.style.display = 'block'
