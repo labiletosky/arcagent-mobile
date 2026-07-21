@@ -540,22 +540,23 @@ async function loadRecentOrders() {
     const ids = []
     for (let i = count; i >= start; i--) ids.push(i)
 
-    // Only 10 orders here, a one-time page-load, not a repeated
-    // scheduled scan like the bot's 500-order runs. Now that
-    // staticNetwork (added earlier) roughly halves real RPC load,
-    // trying concurrent fetching again for this small, one-off case —
-    // this REVERSES the earlier sequential-with-delay approach, and
-    // needs to be confirmed working live before being fully trusted.
-    // Falls back gracefully per-order if any individual call fails.
-    const results = await Promise.allSettled(ids.map(id => agent.getOrder(id)))
+    // REVERTED — concurrent fetching (10 at once) was tried and
+    // confirmed BROKEN live on 2026-07-21: 9 out of 10 calls failed
+    // with rate-limit errors, only 1 order rendered. Back to
+    // sequential with a delay, which is proven working. Arc's public
+    // RPC rate-limits concurrent requests specifically, not just
+    // total volume over time — staticNetwork alone wasn't enough to
+    // make full concurrency safe.
     const orders = []
-    results.forEach((r, idx) => {
-      if (r.status === 'fulfilled') {
-        orders.push(r.value)
-      } else {
-        console.error(`Could not load order #${ids[idx]}, skipping:`, r.reason?.message)
+    for (const id of ids) {
+      try {
+        const o = await agent.getOrder(id)
+        orders.push(o)
+      } catch (e) {
+        console.error(`Could not load order #${id}, skipping:`, e.message)
       }
-    })
+      await new Promise(r => setTimeout(r, 120))
+    }
 
     if (orders.length === 0) {
       list.innerHTML = '<div class="empty-state">Could not load orders right now. Try refreshing in a moment.</div>'
