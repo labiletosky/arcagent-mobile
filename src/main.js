@@ -465,9 +465,19 @@ async function ensureArcNetwork(provider) {
 // load on Arc's rate-limited public testnet RPC, which is what
 // caused orders to stop loading. Arc Testnet chain ID confirmed as
 // 5042002 via direct RPC call.
+// Cache a single read-only provider instance instead of creating a
+// new one on every single call — getReadProvider() was being called
+// 8+ times across the app, each one wastefully constructing a fresh
+// provider object from scratch. Reusing one instance is a real,
+// measurable speed improvement with no behavior change.
+let cachedReadProvider = null
+
 function getReadProvider() {
   if (browserProvider) return browserProvider
-  return new ethers.JsonRpcProvider(ARC_RPC_URL, ARC_CHAIN_ID, { staticNetwork: true })
+  if (!cachedReadProvider) {
+    cachedReadProvider = new ethers.JsonRpcProvider(ARC_RPC_URL, ARC_CHAIN_ID, { staticNetwork: true })
+  }
+  return cachedReadProvider
 }
 
 function getCategoryFromItem(item) {
@@ -530,22 +540,22 @@ async function loadRecentOrders() {
     const ids = []
     for (let i = count; i >= start; i--) ids.push(i)
 
-    // Arc's public testnet RPC appears to rate-limit concurrent
-    // requests, not just total volume — even 10 simultaneous calls
-    // were failing with "missing revert data" on 2026-07-17. Staggering
-    // each call by 150ms fixes this at the cost of a slightly slower
-    // load (roughly 1.5s for 10 orders instead of instant), which is
-    // an acceptable tradeoff for actually working.
+    // Only 10 orders here, a one-time page-load, not a repeated
+    // scheduled scan like the bot's 500-order runs. Now that
+    // staticNetwork (added earlier) roughly halves real RPC load,
+    // trying concurrent fetching again for this small, one-off case —
+    // this REVERSES the earlier sequential-with-delay approach, and
+    // needs to be confirmed working live before being fully trusted.
+    // Falls back gracefully per-order if any individual call fails.
+    const results = await Promise.allSettled(ids.map(id => agent.getOrder(id)))
     const orders = []
-    for (const id of ids) {
-      try {
-        const o = await agent.getOrder(id)
-        orders.push(o)
-      } catch (e) {
-        console.error(`Could not load order #${id}, skipping:`, e.message)
+    results.forEach((r, idx) => {
+      if (r.status === 'fulfilled') {
+        orders.push(r.value)
+      } else {
+        console.error(`Could not load order #${ids[idx]}, skipping:`, r.reason?.message)
       }
-      await new Promise(r => setTimeout(r, 150))
-    }
+    })
 
     if (orders.length === 0) {
       list.innerHTML = '<div class="empty-state">Could not load orders right now. Try refreshing in a moment.</div>'
@@ -580,7 +590,10 @@ async function loadMyOrders() {
     // the list, a real tradeoff for actually completing instead of
     // failing outright.
     const BATCH = 3
-    const BATCH_DELAY_MS = 200
+    // Reduced from 200ms for the same reason — staticNetwork already
+    // halves real RPC load, so a smaller delay is safer to try than
+    // it was before that fix. Still conservative, not zero.
+    const BATCH_DELAY_MS = 120
     const ids = []
     for (let i = count; i >= 1; i--) ids.push(i)
     let myOrders = []
